@@ -37,10 +37,6 @@
                     <img src="https://www.svgrepo.com/show/353985/laravel.svg" alt="Laravel Logo">
                     <p>Laravel</p>
                 </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/373604/flutter.svg" alt="Flutter Logo">
-                    <p>Flutter</p>
-                </div>
             </div>
         </div>
 
