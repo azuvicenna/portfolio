@@ -1,14 +1,24 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import MainLayout from "@/layout/MainLayout.vue"; 
+import MainLayout from "@/layout/MainLayout.vue";
+import AdminLayout from "@/layout/AdminLayout.vue";
 
-import AboutView from "@/views/AboutView.vue";
-import ExperienceView from "@/views/ExperienceView.vue";
-import EducationView from "@/views/EducationView.vue";
-import SkillView from "@/views/SkillView.vue";
-import ProjectView from "@/views/ProjectView.vue";
-import BlogView from "@/views/BlogView.vue";
-import Guestbook from "@/views/Guestbook.vue";
+import AboutView from "@/views/public/AboutView.vue";
+import ExperienceView from "@/views/public/ExperienceView.vue";
+import EducationView from "@/views/public/EducationView.vue";
+import SkillView from "@/views/public/SkillView.vue";
+import ProjectView from "@/views/public/ProjectView.vue";
+import BlogView from "@/views/public/BlogView.vue";
+import Guestbook from "@/views/public/Guestbook.vue";
+
+import AdminDashboardView from "@/views/admin/AdminDashboardView.vue";
+import AdminAboutView from "@/views/admin/AdminAboutView.vue";
+import AdminExperienceView from "@/views/admin/AdminExperienceView.vue";
+import AdminEducationView from "@/views/admin/AdminEducationView.vue";
+import AdminSkillView from "@/views/admin/AdminSkillView.vue";
+import AdminProjectView from "@/views/admin/AdminProjectView.vue";
+import AdminBlogView from "@/views/admin/AdminBlogView.vue";
+import AdminGuestbookView from "@/views/admin/AdminGuestbookView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || "/"),
@@ -23,7 +33,7 @@ const router = createRouter({
           component: AboutView,
           meta: {
             title: "About",
-            header: "About" 
+            header: "About",
           },
         },
         {
@@ -32,7 +42,7 @@ const router = createRouter({
           component: ExperienceView,
           meta: {
             title: "Experiences",
-            header: "Experiences"
+            header: "Experiences",
           },
         },
         {
@@ -41,44 +51,112 @@ const router = createRouter({
           component: EducationView,
           meta: {
             title: "Educations",
-            header: "Educations"
+            header: "Educations",
           },
         },
         {
-          path: "skills", 
+          path: "skills",
           name: "skills",
           component: SkillView,
           meta: {
             title: "Skills",
-            header: "Skills"
+            header: "Skills",
           },
         },
         {
-          path: "projects", 
+          path: "projects",
           name: "projects",
           component: ProjectView,
           meta: {
             title: "Projects",
-            header: "Projects"
+            header: "Projects",
           },
         },
         {
-          path: "blogs", 
+          path: "blogs",
           name: "blogs",
           component: BlogView,
           meta: {
             title: "Blogs",
-            header: "Blogs"
+            header: "Blogs",
           },
         },
         {
-          path: "guestbook", 
+          path: "guestbook",
           name: "guestbook",
           component: Guestbook,
           meta: {
             title: "Guestbook",
-            header: "Guestbook"
+            header: "Guestbook",
           },
+        },
+      ],
+    },
+    {
+      path: "/admin",
+      component: AdminLayout,
+      children: [
+        {
+          path: "",
+          name: "admin-dashboard",
+          component: AdminDashboardView,
+          meta: {
+            title: "Dashboard",
+          },
+        },
+        {
+          path: "about",
+          name: "admin-about",
+          component: AdminAboutView,
+          meta: {
+            title: "Edit Profile",
+          },
+        },
+        {
+          path: "experiences",
+          name: "admin-experiences",
+          component: AdminExperienceView,
+          meta: {
+            title: "Experiences",
+          },
+        },
+        {
+          path: "educations",
+          name: "admin-educations",
+          component: AdminEducationView,
+          meta: {
+            title: "Educations",
+          },
+        },
+        {
+          path: "skills",
+          name: "admin-skills",
+          component: AdminSkillView,
+          meta: {
+            title: "Skills",
+          },
+        },
+        {
+          path: "projects",
+          name: "admin-projects",
+          component: AdminProjectView,
+          meta: {
+            title: "Projects",
+          },
+        },
+        {
+          path: "blogs",
+          name: "admin-blogs",
+          component: AdminBlogView,
+          meta: {
+            title: "Blogs",
+          },
+        },
+        {
+          path: "guestbook",
+          name: "admin-guestbook",
+          component: AdminGuestbookView,
+          meta: { title: "Guestbook" },
         },
       ],
     },
@@ -86,8 +164,8 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title + ' - My Portfolio' || "My Portfolio";
-  
+  document.title = to.meta.title + " - My Portfolio" || "My Portfolio";
+
   next();
 });
 
