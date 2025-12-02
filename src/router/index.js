@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import MainLayout from "@/layout/MainLayout.vue";
 import AdminLayout from "@/layout/AdminLayout.vue";
 
+import LoginView from "@/views/auth/LoginView.vue";
+
 import AboutView from "@/views/public/AboutView.vue";
 import ExperienceView from "@/views/public/ExperienceView.vue";
 import EducationView from "@/views/public/EducationView.vue";
@@ -23,6 +25,14 @@ import AdminGuestbookView from "@/views/admin/AdminGuestbookView.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || "/"),
   routes: [
+    {
+      path: "/login",
+      name: "login",
+      component: LoginView,
+      meta: {
+        title: "Login",
+      },
+    },
     {
       path: "/",
       component: MainLayout,
@@ -97,7 +107,7 @@ const router = createRouter({
       component: AdminLayout,
       children: [
         {
-          path: "",
+          path: "dashboard",
           name: "admin-dashboard",
           component: AdminDashboardView,
           meta: {

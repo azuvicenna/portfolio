@@ -1,51 +1,101 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Plus, Pencil, Trash2, X, Loader2, BookOpen, Clock, Globe } from 'lucide-vue-next';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  BookOpen, 
+  Loader2,
+  Image as ImageIcon
+} from 'lucide-vue-next';
 
-// State
+// --- STATE ---
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const isSubmitting = ref(false);
 
-// Blog model
-const currentBlog = ref({
+const form = ref({
   id: null,
   title: '',
   slug: '',
   summary: '',
-  content: '', // Konten utama (Markdown)
-  coverImage: '',
-  language: 'ID', // Default ID
-  tags: [], // Array of strings
+  content: '',
+  language: 'ID',
   isPublished: false,
-  publishedAt: new Date().toISOString().split('T')[0] // Default hari ini
+  publishedAt: new Date().toISOString().split('T')[0],
+  coverImage: '',
+  tags: '' 
 });
 
-// Data Dummy Blogs
 const blogs = ref([
-  { id: 1, title: 'Pesan semantik pada perintah commit Git', slug: 'semantic-commit-git', language: 'ID', summary: 'Panduan singkat mengenai Semantic Commit.', isPublished: true, publishedAt: '2024-01-29', tags: ['git', 'best-practice'], coverImage: 'https://via.placeholder.com/100/1e40af/ffffff?text=B1' },
-  { id: 2, title: 'Deploy HonoJS to Railway', slug: 'deploy-hono-railway', language: 'EN', summary: 'A step-by-step guide.', isPublished: false, publishedAt: null, tags: ['hono', 'deployment'], coverImage: 'https://via.placeholder.com/100/f59e0b/ffffff?text=B2' },
+  {
+    id: 1,
+    title: 'Tutorial Hono JS Dasar',
+    slug: 'tutorial-hono-js',
+    summary: 'Panduan lengkap memulai backend dengan Hono JS.',
+    content: '# Hono JS\n\nIsi artikel...',
+    language: 'ID',
+    isPublished: true,
+    publishedAt: '2025-11-28',
+    coverImage: '',
+    tags: ['Backend', 'JS']
+  },
+  {
+    id: 2,
+    title: 'Deploying to Railway',
+    slug: 'deploy-railway',
+    summary: 'Step-by-step guide to deploy your app.',
+    content: '# Deployment\n\nSteps...',
+    language: 'EN',
+    isPublished: false,
+    publishedAt: null,
+    coverImage: '',
+    tags: ['DevOps']
+  },
 ]);
 
-// Helper: Menghasilkan slug dari title
-const generateSlug = (title) => {
-  return title.toLowerCase().trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+// --- HELPER FUNCTIONS ---
+const generateSlug = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
 };
 
-// Logika Modal & Edit
+const formatDate = (dateString) => {
+  if (!dateString) return 'Not set';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// --- MODAL LOGIC ---
 const openCreateModal = () => {
   isEditing.value = false;
-  currentBlog.value = { id: null, title: '', slug: '', summary: '', content: '', coverImage: '', language: 'ID', tags: [], isPublished: false, publishedAt: new Date().toISOString().split('T')[0] };
+  form.value = {
+    id: null,
+    title: '',
+    slug: '',
+    summary: '',
+    content: '',
+    language: 'ID',
+    isPublished: false,
+    publishedAt: new Date().toISOString().split('T')[0],
+    coverImage: '',
+    tags: ''
+  };
   isModalOpen.value = true;
 };
 
-const openEditModal = (blog) => {
+const openEditModal = (item) => {
   isEditing.value = true;
-  // Saat edit, tags array diubah jadi string (dipisah koma) agar mudah diedit
-  currentBlog.value = { ...blog, tags: blog.tags.join(', ') }; 
+  form.value = {
+    ...item,
+    tags: item.tags.join(', ')
+  };
   isModalOpen.value = true;
 };
 
@@ -53,181 +103,295 @@ const closeModal = () => {
   isModalOpen.value = false;
 };
 
-const saveBlog = () => {
-  // Logika konversi Tags (String dipisah koma -> Array)
-  const tagsArray = currentBlog.value.tags 
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(tag => tag !== '');
-
-  // Logika simpan data ke Hono akan masuk di sini
-  isSubmitting.value = true;
-  setTimeout(() => {
-    // Simulasi sukses
-    alert(`Simulasi: Blog "${currentBlog.value.title}" (Status: ${currentBlog.value.isPublished ? 'Published' : 'Draft'}) berhasil disimpan!`);
-    isSubmitting.value = false;
-    closeModal();
-  }, 1000);
-};
-
-// Auto-generate slug saat title berubah (hanya saat membuat project baru)
-watch(() => currentBlog.value.title, (newTitle) => {
-  if (!isEditing.value) {
-    currentBlog.value.slug = generateSlug(newTitle);
+watch(() => form.value.title, (newTitle) => {
+  if (!isEditing.value && newTitle) {
+    form.value.slug = generateSlug(newTitle);
   }
 });
+
+const saveBlog = () => {
+  isSubmitting.value = true;
+
+  const tagsArray = form.value.tags
+    .split(',')
+    .map(t => t.trim())
+    .filter(t => t !== '');
+
+  const blogPayload = {
+    ...form.value,
+    tags: tagsArray,
+    publishedAt: form.value.isPublished ? form.value.publishedAt : null
+  };
+
+  setTimeout(() => {
+    if (isEditing.value) {
+      const index = blogs.value.findIndex(b => b.id === form.value.id);
+      if (index !== -1) {
+        blogs.value[index] = { ...blogPayload };
+      }
+    } else {
+      blogs.value.unshift({
+        ...blogPayload,
+        id: Date.now()
+      });
+    }
+
+    isSubmitting.value = false;
+    closeModal();
+  }, 800);
+};
+
+const deleteBlog = (id) => {
+  if (confirm('Are you sure you want to delete this article?')) {
+    blogs.value = blogs.value.filter(b => b.id !== id);
+  }
+};
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-800">Blogs</h1>
-      <button 
-        @click="openCreateModal"
-        class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-      >
-        <Plus :size="20" />
+  <div class="max-w-7xl mx-auto space-y-8">
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Blog Posts</h1>
+        <p class="text-slate-500 mt-1">Write, edit, and publish your thoughts.</p>
+      </div>
+
+      <button @click="openCreateModal"
+        class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-medium group">
+        <Plus :size="20" class="group-hover:rotate-90 transition transform duration-300" />
         <span>Write New Article</span>
       </button>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-5/12">Title / Slug</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Tags / Language</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Actions</th>
+    <div class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+
+      <div v-if="blogs.length === 0" class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
+        <BookOpen :size="48" class="mb-4 opacity-50" />
+        <p>No articles yet.</p>
+      </div>
+
+      <table v-else class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 font-bold bg-gray-50/50">
+            <th class="px-8 py-5">Article</th>
+            <th class="px-6 py-5">Status & Date</th>
+            <th class="px-6 py-5">Tags</th>
+            <th class="px-8 py-5 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="blog in blogs" :key="blog.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4">
-              <p class="font-semibold text-gray-800">{{ blog.title }}</p>
-              <p class="text-xs text-gray-500 break-all">/blog/{{ blog.slug }}</p>
+        <tbody class="divide-y divide-gray-50">
+
+          <tr v-for="item in blogs" :key="item.id" class="group hover:bg-gray-50/80 transition duration-200">
+            <td class="px-8 py-5">
+              <div class="flex gap-4">
+                <div
+                  class="flex flex-col items-center justify-center w-12 h-12 rounded-xl flex-shrink-0 text-xs font-bold border"
+                  :class="item.language === 'ID' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'">
+                  {{ item.language }}
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-800 text-base">{{ item.title }}</h3>
+                  <p class="text-xs text-gray-400 mt-0.5 font-mono">/blog/{{ item.slug }}</p>
+                </div>
+              </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span 
-                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                :class="blog.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
-              >
-                <Clock :size="14" class="mr-1" />
-                {{ blog.isPublished ? 'Published' : 'Draft' }}
-              </span>
-              <p v-if="blog.isPublished" class="text-xs text-gray-400 mt-1">
-                {{ blog.publishedAt }}
-              </p>
+
+            <td class="px-6 py-5">
+              <div class="space-y-1">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
+                  :class="item.isPublished ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-500 border-gray-200'">
+                  <svg v-if="item.isPublished" class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  {{ item.isPublished ? 'Published' : 'Draft' }}
+                </span>
+                <p class="text-xs text-gray-500 font-medium" :class="!item.isPublished ? 'italic' : ''">
+                  {{ formatDate(item.publishedAt) }}
+                </p>
+              </div>
             </td>
-            <td class="px-6 py-4">
-              <span 
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-                :class="blog.language === 'ID' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'"
-              >
-                <Globe :size="12" class="mr-1" />
-                {{ blog.language }}
-              </span>
-              <p class="text-xs text-gray-500 line-clamp-1 mt-1">{{ blog.tags.join(', ') }}</p>
+
+            <td class="px-6 py-5">
+              <div class="flex flex-wrap gap-1">
+                <span v-for="tag in item.tags" :key="tag"
+                  class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                  {{ tag }}
+                </span>
+              </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-              <button @click="openEditModal(blog)" class="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50">
-                <Pencil :size="18" />
-              </button>
-              <button class="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50">
-                <Trash2 :size="18" />
-              </button>
+
+            <td class="px-8 py-5 text-right">
+              <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="openEditModal(item)"
+                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
+                  title="Edit">
+                  <Pencil :size="16" />
+                </button>
+                <button @click="deleteBlog(item.id)"
+                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Delete">
+                  <Trash2 :size="16" />
+                </button>
+              </div>
             </td>
           </tr>
+
         </tbody>
       </table>
     </div>
 
-    <div v-if="isModalOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl transform transition-all duration-300 my-8">
-        <div class="p-6 border-b flex items-center justify-between">
-          <h3 class="text-xl font-bold text-gray-800">{{ isEditing ? 'Edit Article' : 'Write New Article' }}</h3>
-          <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
-            <X :size="24" />
-          </button>
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isModalOpen" class="fixed inset-0 z-[999] overflow-y-auto">
+
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+
+            <div
+              class="relative z-10 w-full max-w-6xl h-[90vh] flex flex-col transform rounded-[2rem] bg-white p-8 text-left shadow-2xl transition-all border border-gray-100 my-8">
+
+              <div class="flex items-center justify-between mb-6 flex-shrink-0">
+                <div>
+                  <h2 class="text-2xl font-bold text-slate-800">
+                    {{ isEditing ? 'Edit Article' : 'Write New Article' }}
+                  </h2>
+                  <p class="text-slate-400 text-sm">Share your knowledge.</p>
+                </div>
+                <button @click="closeModal"
+                  class="p-2 bg-gray-50 text-gray-400 hover:text-slate-800 hover:bg-gray-100 rounded-full transition">
+                  <X :size="24" />
+                </button>
+              </div>
+
+              <form @submit.prevent="saveBlog" class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 overflow-hidden">
+
+                <div class="md:col-span-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar border-r border-gray-100">
+
+                  <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">Publish
+                      Status</label>
+                    <div class="flex items-center gap-3 mb-4">
+                      <input v-model="form.isPublished" type="checkbox" id="published"
+                        class="w-5 h-5 text-green-600 rounded focus:ring-green-500 border-gray-300">
+                      <label for="published" class="text-sm font-bold text-slate-700 cursor-pointer select-none">Publish
+                        Now</label>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-400">Date</label>
+                      <input v-model="form.publishedAt" type="date"
+                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none transition focus:border-indigo-500">
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Language</label>
+                    <select v-model="form.language"
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 text-sm">
+                      <option value="ID">Bahasa Indonesia</option>
+                      <option value="EN">English</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cover Image URL</label>
+                    <div
+                      class="aspect-video bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 border border-dashed border-gray-300 overflow-hidden">
+                      <img v-if="form.coverImage" :src="form.coverImage" class="w-full h-full object-cover" />
+                      <span v-else class="text-xs">Preview</span>
+                    </div>
+                    <input v-model="form.coverImage" type="url" placeholder="https://..."
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 text-sm" />
+                  </div>
+
+                </div>
+
+                <div class="md:col-span-3 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+
+                  <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Title</label>
+                      <input v-model="form.title" type="text" placeholder="Article Title"
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-bold text-lg"
+                        required />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Slug</label>
+                      <input v-model="form.slug" type="text" placeholder="article-title"
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800"
+                        required />
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Summary</label>
+                    <textarea v-model="form.summary" rows="2" placeholder="Brief description..."
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 resize-none"></textarea>
+                  </div>
+
+                  <div class="space-y-2 h-full flex flex-col min-h-[400px]">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider flex justify-between">
+                      <span>Content (Markdown)</span>
+                      <span class="text-indigo-600 cursor-pointer hover:underline">Preview</span>
+                    </label>
+                    <textarea v-model="form.content"
+                      class="flex-1 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-mono text-sm leading-relaxed resize-none"
+                      placeholder="# Write something amazing..."></textarea>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tags</label>
+                    <input v-model="form.tags" type="text" placeholder="tech, tutorial, life (comma separated)"
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800" />
+                  </div>
+
+                  <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" @click="closeModal"
+                      class="px-6 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-gray-50 transition">
+                      Cancel
+                    </button>
+                    <button type="submit" :disabled="isSubmitting"
+                      class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                      <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
+                      <span v-else>Save Article</span>
+                    </button>
+                  </div>
+
+                </div>
+              </form>
+
+            </div>
+          </div>
         </div>
-        
-        <form @submit.prevent="saveBlog" class="p-6 space-y-6">
-          
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            
-            <div class="md:col-span-1 space-y-4">
-              <div class="bg-gray-50 p-4 rounded-xl border space-y-4">
-                <h3 class="text-sm font-bold text-gray-700">Status & Publish</h3>
-                
-                <div class="flex items-center gap-2">
-                  <input v-model="currentBlog.isPublished" id="isPublished" type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
-                  <label for="isPublished" class="text-sm font-medium text-gray-700">Publish Now</label>
-                </div>
+      </Transition>
+    </Teleport>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
-                  <input v-model="currentBlog.publishedAt" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                  <select v-model="currentBlog.language" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500">
-                    <option value="ID">Bahasa Indonesia</option>
-                    <option value="EN">English</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="bg-gray-50 p-4 rounded-xl border">
-                <img :src="currentBlog.coverImage || 'https://via.placeholder.com/200?text=Cover+Image'" class="w-full h-auto object-cover rounded-lg mb-3" />
-                <label class="block text-sm font-medium text-gray-700 mb-1">Cover Image URL</label>
-                <input v-model="currentBlog.coverImage" type="url" placeholder="Paste link disini" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500" />
-              </div>
-            </div>
-
-            <div class="md:col-span-3 space-y-4">
-              
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <input v-model="currentBlog.title" type="text" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Slug (URL)</label>
-                  <input v-model="currentBlog.slug" type="text" required :placeholder="generateSlug(currentBlog.title)" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 focus:ring-blue-500" />
-                  <p class="text-xs text-gray-400 mt-1 truncate">/blog/{{ currentBlog.slug }}</p>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Summary (Short description for list/SEO)</label>
-                <textarea v-model="currentBlog.summary" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500"></textarea>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Content (Full Article - Markdown)</label>
-                <textarea v-model="currentBlog.content" rows="10" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500 font-mono text-sm"></textarea>
-                <p class="text-xs text-gray-400 mt-1 text-right">Gunakan Markdown untuk formatting.</p>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tags (Pisahkan dengan koma: honojs, git, tutorial)</label>
-                <input v-model="currentBlog.tags" type="text" placeholder="e.g. javascript, tailwind, deployment" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-blue-500" />
-              </div>
-
-            </div>
-          </div>
-
-
-          <div class="flex justify-end pt-4 space-x-3 border-t">
-            <button type="button" @click="closeModal" class="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition">Cancel</button>
-            <button type="submit" :disabled="isSubmitting" class="flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50">
-              <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
-              <span v-else>Save Article</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Custom Scrollbar for Modal content area */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0;
+  border-radius: 20px;
+}
+</style>

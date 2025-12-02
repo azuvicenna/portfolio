@@ -1,21 +1,48 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { CheckCircle, XCircle, Trash2, Clock, Filter, Loader2, MessageSquare, ExternalLink } from 'lucide-vue-next';
+import {
+  Trash2,
+  CheckCircle,
+  XCircle,
+  MessageSquare,
+  Clock,
+  Loader2,
+  RefreshCw
+} from 'lucide-vue-next';
 
-// State
+// --- STATE ---
 const isSubmitting = ref(false);
-const filterStatus = ref('NEW'); // Filter default
-const statuses = ['NEW', 'APPROVED', 'REJECTED', 'ALL'];
+const filterStatus = ref('NEW');
+const tabs = ['NEW', 'APPROVED', 'REJECTED', 'ALL'];
 
-// Data Dummy Guestbook Entries
 const messages = ref([
-  { id: 1, name: 'Budi Hartono', email: 'budi@mail.com', message: 'Keren banget portofolionya! Terutama bagian Project, rapih dan detail.', status: 'NEW', createdAt: '2025-11-28T10:00:00Z' },
-  { id: 2, name: 'Siti Aminah', email: 'siti@mail.com', message: 'Apakah Anda terbuka untuk peluang freelance saat ini?', status: 'APPROVED', createdAt: '2025-11-27T15:30:00Z' },
-  { id: 3, name: 'Anonim 33', email: 'anon@mail.com', message: 'Website Anda sangat membantu saya dalam memilih stack baru. Terima kasih!', status: 'NEW', createdAt: '2025-11-28T11:45:00Z' },
-  { id: 4, name: 'John Doe', email: 'john@mail.com', message: 'Beberapa link di halaman projects saya rasa sudah kadaluarsa.', status: 'REJECTED', createdAt: '2025-11-26T08:12:00Z' },
+  {
+    id: 1,
+    name: 'Budi Hartono',
+    email: 'budi@mail.com',
+    message: 'Keren banget portofolionya! Terutama bagian Project, rapih dan detail. Saya suka pemilihan warnanya. Sukses terus bang!',
+    status: 'NEW',
+    createdAt: '2025-11-28T10:00:00Z'
+  },
+  {
+    id: 2,
+    name: 'Siti Aminah',
+    email: 'siti@mail.com',
+    message: 'Apakah Anda terbuka untuk peluang freelance saat ini? Saya punya project web desa yang butuh bantuan.',
+    status: 'APPROVED',
+    createdAt: '2025-11-27T15:30:00Z'
+  },
+  {
+    id: 3,
+    name: 'John Doe',
+    email: 'john@spam.com',
+    message: 'Cheap web hosting services available here: [Link Removed]',
+    status: 'REJECTED',
+    createdAt: '2025-11-26T08:12:00Z'
+  },
 ]);
 
-// Helper: Memfilter pesan berdasarkan status yang dipilih
+// --- COMPUTED ---
 const filteredMessages = computed(() => {
   if (filterStatus.value === 'ALL') {
     return messages.value;
@@ -23,158 +50,176 @@ const filteredMessages = computed(() => {
   return messages.value.filter(msg => msg.status === filterStatus.value);
 });
 
-// Helper: Menghitung jumlah untuk setiap status
-const statusCounts = computed(() => {
-  const counts = { NEW: 0, APPROVED: 0, REJECTED: 0, ALL: 0 };
-  messages.value.forEach(msg => {
-    counts[msg.status]++;
-    counts.ALL++;
-  });
-  return counts;
-});
+const getCount = (status) => {
+  if (status === 'ALL') return messages.value.length;
+  return messages.value.filter(msg => msg.status === status).length;
+};
 
-// Logika Aksi Moderasi
-const performAction = (id, action) => {
+// --- HELPER ---
+const formatDateRelative = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 172800) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'NEW': return 'bg-blue-100 text-blue-700';
+    case 'APPROVED': return 'bg-green-100 text-green-700';
+    case 'REJECTED': return 'bg-red-100 text-red-700';
+    default: return 'bg-gray-100 text-gray-700';
+  }
+};
+
+const getBorderColor = (status) => {
+  switch (status) {
+    case 'NEW': return 'border-l-blue-500';
+    case 'APPROVED': return 'border-l-green-500';
+    case 'REJECTED': return 'border-l-red-500';
+    default: return 'border-l-gray-300';
+  }
+};
+
+// --- ACTIONS ---
+const updateStatus = (id, newStatus) => {
   isSubmitting.value = true;
-  console.log(`Simulasi: Memproses pesan ID ${id} dengan aksi: ${action}`);
-
-  // Simulasi API call
   setTimeout(() => {
-    const index = messages.value.findIndex(msg => msg.id === id);
+    const index = messages.value.findIndex(m => m.id === id);
     if (index !== -1) {
-      if (action === 'DELETE') {
-        messages.value.splice(index, 1);
-        alert(`Pesan ID ${id} berhasil dihapus (Simulasi)`);
-      } else {
-        const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
-        messages.value[index].status = newStatus;
-        alert(`Pesan ID ${id} berhasil diubah ke status ${newStatus} (Simulasi)`);
-      }
+      messages.value[index].status = newStatus;
     }
     isSubmitting.value = false;
   }, 500);
 };
 
-// Helper: Format tanggal
-const formatTime = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+const deleteMessage = (id) => {
+  if (confirm('Are you sure you want to delete this message?')) {
+    isSubmitting.value = true;
+    setTimeout(() => {
+      messages.value = messages.value.filter(m => m.id !== id);
+      isSubmitting.value = false;
+    }, 500);
+  }
 };
 
-// Helper: Mendapatkan style status
-const getStatusStyles = (status) => {
-  switch (status) {
-    case 'APPROVED': return 'bg-green-100 text-green-800';
-    case 'REJECTED': return 'bg-red-100 text-red-800';
-    case 'NEW':
-    default: return 'bg-blue-100 text-blue-800';
-  }
+const refreshData = () => {
+  isSubmitting.value = true;
+  setTimeout(() => {
+    isSubmitting.value = false;
+  }, 1000);
 };
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-        <MessageSquare :size="24" class="text-blue-600" />
-        Guestbook Moderation
-      </h1>
+  <div class="max-w-5xl mx-auto space-y-8">
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Guestbook</h1>
+        <span
+          class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">Moderation</span>
+      </div>
+
+      <button @click="refreshData" :disabled="isSubmitting"
+        class="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition disabled:opacity-50">
+        <RefreshCw :size="16" :class="{ 'animate-spin': isSubmitting }" />
+        <span>Refresh</span>
+      </button>
     </div>
 
-    <div class="flex items-center space-x-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
-      <Filter :size="18" class="text-gray-500" />
-      <span class="text-sm font-medium text-gray-700">Filter Status:</span>
-      
-      <button
-        v-for="status in statuses"
-        :key="status"
-        @click="filterStatus = status"
-        :disabled="isSubmitting"
-        class="px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
-        :class="{
-          'bg-blue-600 text-white': filterStatus === status,
-          'bg-gray-100 text-gray-700 hover:bg-gray-200': filterStatus !== status
-        }"
-      >
-        {{ status }} ({{ statusCounts[status] }})
+    <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 w-fit">
+      <button v-for="tab in tabs" :key="tab" @click="filterStatus = tab"
+        class="px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2" :class="filterStatus === tab
+          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+          : 'text-gray-500 hover:bg-gray-50'">
+        {{ tab.charAt(0) + tab.slice(1).toLowerCase() }}
+        <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]"
+          :class="filterStatus !== tab ? 'bg-gray-200 text-gray-600' : ''">
+          {{ getCount(tab) }}
+        </span>
       </button>
-      
-      <Loader2 v-if="isSubmitting" class="animate-spin text-blue-500" :size="20" />
     </div>
 
     <div class="space-y-4">
-      <div v-if="filteredMessages.length === 0" class="text-center p-12 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-500">
-        <BookOpen :size="32" class="mx-auto mb-3" />
-        <p class="font-medium">Tidak ada pesan yang sesuai dengan filter **{{ filterStatus }}**.</p>
+
+      <div v-if="filteredMessages.length === 0"
+        class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
+        <MessageSquare :size="48" class="mb-4 opacity-50" />
+        <p>No messages found in {{ filterStatus.toLowerCase() }} folder.</p>
       </div>
 
-      <div 
-        v-for="msg in filteredMessages" 
-        :key="msg.id" 
-        class="bg-white rounded-xl shadow-md p-5 border-l-4"
-        :class="{
-          'border-blue-500': msg.status === 'NEW',
-          'border-green-500': msg.status === 'APPROVED',
-          'border-red-500': msg.status === 'REJECTED',
-        }"
-      >
-        <div class="flex justify-between items-start mb-3">
-          <div>
-            <div class="font-bold text-lg text-gray-800">{{ msg.name }}</div>
-            <div class="text-sm text-gray-500 flex items-center space-x-2">
-              <span>{{ msg.email }}</span>
-              <a :href="`mailto:${msg.email}`" target="_blank" class="text-blue-500 hover:text-blue-700">
-                <ExternalLink :size="14" />
+      <div v-for="msg in filteredMessages" :key="msg.id"
+        class="bg-white p-6 rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-l-4 border-gray-100 group transition hover:shadow-lg"
+        :class="getBorderColor(msg.status)">
+        <div class="flex justify-between items-start mb-4">
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0" :class="{
+              'bg-blue-50 text-blue-600': msg.status === 'NEW',
+              'bg-green-50 text-green-600': msg.status === 'APPROVED',
+              'bg-red-50 text-red-600': msg.status === 'REJECTED'
+            }">
+              {{ msg.name.charAt(0).toUpperCase() }}
+            </div>
+
+            <div>
+              <h3 class="font-bold text-slate-800 text-lg">{{ msg.name }}</h3>
+              <a :href="`mailto:${msg.email}`"
+                class="text-sm text-gray-400 hover:text-indigo-600 transition flex items-center gap-1">
+                {{ msg.email }}
               </a>
             </div>
           </div>
+
           <div class="text-right">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold" :class="getStatusStyles(msg.status)">
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
+              :class="getStatusColor(msg.status)">
               {{ msg.status }}
             </span>
-            <div class="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">
-              <Clock :size="12" />
-              {{ formatTime(msg.createdAt) }}
-            </div>
+            <p class="text-xs text-gray-400 mt-1 font-medium flex items-center justify-end gap-1">
+              <Clock :size="12" /> {{ formatDateRelative(msg.createdAt) }}
+            </p>
           </div>
         </div>
 
-        <p class="text-gray-700 border-t border-b py-4 my-3 whitespace-pre-wrap">{{ msg.message }}</p>
+        <p class="text-slate-600 leading-relaxed mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 italic">
+          "{{ msg.message }}"
+        </p>
 
-        <div class="flex justify-end space-x-3 pt-2">
-          
-          <button 
-            @click="performAction(msg.id, 'DELETE')" 
-            :disabled="isSubmitting"
-            class="flex items-center gap-1 text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
-          >
-            <Trash2 :size="18" />
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-50">
+
+          <button @click="deleteMessage(msg.id)" :disabled="isSubmitting"
+            class="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition font-bold text-sm disabled:opacity-50">
+            <Trash2 :size="16" />
             <span>Delete</span>
           </button>
-          
-          <button 
-            v-if="msg.status !== 'REJECTED'"
-            @click="performAction(msg.id, 'REJECT')" 
-            :disabled="isSubmitting"
-            class="flex items-center gap-1 text-orange-600 hover:text-orange-800 p-2 rounded-lg hover:bg-orange-50 transition disabled:opacity-50"
-          >
-            <XCircle :size="18" />
+
+          <button v-if="msg.status !== 'REJECTED'" @click="updateStatus(msg.id, 'REJECTED')" :disabled="isSubmitting"
+            class="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition font-bold text-sm border border-gray-200 disabled:opacity-50">
+            <XCircle :size="16" />
             <span>Reject</span>
           </button>
 
-          <button 
-            v-if="msg.status !== 'APPROVED'"
-            @click="performAction(msg.id, 'APPROVE')" 
-            :disabled="isSubmitting"
-            class="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition disabled:opacity-50"
-          >
-            <CheckCircle :size="18" />
+          <button v-if="msg.status !== 'APPROVED'" @click="updateStatus(msg.id, 'APPROVED')" :disabled="isSubmitting"
+            class="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition font-bold text-sm shadow-md shadow-indigo-100 disabled:opacity-50">
+            <CheckCircle :size="16" />
             <span>Approve</span>
           </button>
+
+          <button v-if="msg.status === 'APPROVED'" @click="updateStatus(msg.id, 'NEW')" :disabled="isSubmitting"
+            class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl transition font-bold text-sm disabled:opacity-50">
+            <span>Set to New</span>
+          </button>
+
         </div>
       </div>
+
     </div>
+
   </div>
 </template>
