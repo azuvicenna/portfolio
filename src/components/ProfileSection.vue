@@ -2,7 +2,7 @@
 defineProps({
   imageUrl: {
     type: String,
-    default: 'madoka-yuzuhara.jpg'
+    default: 'makima.png'
   }
 })
 </script>
@@ -12,7 +12,7 @@ defineProps({
     <div 
       class="profile-image-container" 
       :style="{ backgroundImage: `url(${imageUrl})` }"
-      aria-label="Foto Profil Muhammad Ilyasa"
+      aria-label="Foto Profil"
     >
       </div>
   </div>
