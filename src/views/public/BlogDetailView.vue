@@ -49,7 +49,7 @@ watch(blog, (blog) => {
             <div class="article-header">
                 <h1 class="title">{{ blog.title }}</h1>
                 <div class="meta">
-                    <span>{{ new Date(blog.published_at).toLocaleDateString('id-ID', { dateStyle: 'long' }) }}</span>
+                    <span>{{ blog.published_at }}</span>
                     <span class="dot">•</span>
                     <span>{{ blog.views || 0 }} Views</span>
                     <span class="dot">•</span>

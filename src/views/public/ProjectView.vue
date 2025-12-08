@@ -6,7 +6,7 @@ import { Loader2, AlertCircle } from 'lucide-vue-next';
 const { data: projects, isLoading, isError } = useQuery({
     queryKey: ['projects'],
     queryFn: () => api('/projects'),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, 
 });
 </script>
 
@@ -29,23 +29,31 @@ const { data: projects, isLoading, isError } = useQuery({
 
                 <div class="projects-grid">
                     <div v-for="project in group.items" :key="project.id" class="project-item">
-                        <div class="project-image">
-                            <img :src="project.image_url || 'https://via.placeholder.com/400x250?text=No+Image'"
-                                :alt="project.title">
-                        </div>
 
-                        <div class="project-content">
-                            <h3>{{ project.title }}</h3>
+                        <component :is="project.content ? 'RouterLink' : 'div'"
+                            :to="project.content ? `/projects/${project.slug}` : undefined"
+                            class="project-link-wrapper">
+                            <div class="project-image">
+                                <img :src="project.image_url || 'https://via.placeholder.com/400x250?text=No+Image'"
+                                    :alt="project.title">
+                            </div>
 
-                            <p class="project-tech">
-                                <strong>Tools:</strong>
-                                {{ project.tools && project.tools.length ? project.tools.join(', ') : 'None' }}
-                            </p>
+                            <div class="project-content">
+                                <h3>
+                                    {{ project.title }}
+                                </h3>
 
-                            <p class="project-description">
-                                {{ project.summary || 'No description available.' }}
-                            </p>
-                        </div>
+                                <p class="project-tech">
+                                    <strong>Tools:</strong>
+                                    {{ project.tools && project.tools.length ? project.tools.join(', ') : 'None' }}
+                                </p>
+
+                                <p class="project-description">
+                                    {{ project.summary || 'No description available.' }}
+                                </p>
+                            </div>
+                        </component>
+
                     </div>
                 </div>
             </div>
@@ -55,6 +63,19 @@ const { data: projects, isLoading, isError } = useQuery({
 </template>
 
 <style scoped>
+.project-link-wrapper {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    cursor: default;
+}
+
+a.project-link-wrapper {
+    cursor: pointer;
+}
+
+
 .projects-list {
     margin-top: 40px;
 }
@@ -85,6 +106,7 @@ const { data: projects, isLoading, isError } = useQuery({
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fff;
 }
 
 .project-item:hover {

@@ -27,15 +27,6 @@ watch(project, (newProject) => {
         document.title = `${newProject.title} - My Portfolio`;
     }
 });
-
-// Helper Format Date
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-};
 </script>
 
 <template>
@@ -68,7 +59,7 @@ const formatDate = (dateString) => {
                     <span class="category-badge">{{ project.category }}</span>
                     <span class="date-badge">
                         <Calendar :size="14" class="mr-1" />
-                        {{ formatDate(project.created_at) }}
+                        {{ project.created_at }}
                     </span>
                 </div>
 
