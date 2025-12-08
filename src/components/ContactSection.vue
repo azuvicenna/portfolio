@@ -1,37 +1,48 @@
 <script setup>
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
 
+const { data: profile } = useQuery({
+    queryKey: ['about'],
+    queryFn: () => api('/about'),
+    staleTime: 1000 * 60 * 60,
+});
 </script>
 
 <template>
     <div class="contact-section">
-        <ul>
-            <li>
+        <ul v-if="profile">
+
+            <li v-if="profile.email">
                 <div class="icon"><i class="fas fa-envelope"></i></div>
                 <div class="text">
                     <h5>Email</h5>
-                    <a href="mailto:azfaalharits25@gmail.com">azfaalharits25@gmail.com</a>
+                    <a :href="`mailto:${profile.email}`">{{ profile.email }}</a>
                 </div>
             </li>
-            <li>
+
+            <li v-if="profile.linkedin_url">
                 <div class="icon"><i class="fab fa-linkedin"></i></div>
                 <div class="text">
                     <h5>LinkedIn</h5>
-                    <a href="https://www.linkedin.com/in/atyla-azfa-al-harits/"
-                        target="_blank">linkedin.com/in/atyla-azfa-al-harits</a>
+                    <a :href="profile.linkedin_url" target="_blank">{{ profile.linkedin_url }}</a>
                 </div>
             </li>
-            <li>
+
+            <li v-if="profile.github_url">
                 <div class="icon"><i class="fab fa-github"></i></div>
                 <div class="text">
                     <h5>Github</h5>
-                    <a href="https://github.com/reezecodee" target="_blank">www.github.com/reezecodee</a>
+                    <a :href="profile.github_url" target="_blank">{{ profile.github_url }}</a>
                 </div>
             </li>
+
         </ul>
     </div>
 </template>
 
 <style scoped>
+/* STYLE ASLI ANDA (TIDAK DIUBAH) */
 .contact-section {
     padding: 20px 40px;
     display: flex;

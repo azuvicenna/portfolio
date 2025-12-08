@@ -1,33 +1,58 @@
 <script setup>
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+import { Loader2, AlertCircle } from 'lucide-vue-next';
+
+const { data: educations, isLoading, isError } = useQuery({
+    queryKey: ['educations'], 
+    queryFn: () => api('/educations'), 
+    staleTime: 1000 * 60 * 60, 
+});
 </script>
 
 <template>
     <div class="education-list">
-        <div class="education-item">
-            <h3>Bachelor of Science in Information Systems</h3>
-            <div class="education-meta">
-                <span class="institution">Bina Sarana Informatika University, Tasikmalaya</span>
-                <span class="date">2023 - Present (Expected 2027)</span>
-            </div>
-            <ul class="education-description">
-                <li>Current GPA: 3.6 / 4.0</li>
-                <li>Relevant Coursework: Web & Mobile Programming, Database Design, Information Systems Design, and Machine
-                    Learning.</li>
-            </ul>
+        
+        <div v-if="isLoading" class="state-container">
+            <Loader2 class="animate-spin" :size="32" color="#FB923C" />
+            <p>Loading education history...</p>
         </div>
 
-        <div class="education-item">
-            <h3>Vocational High School Diploma in Software Engineering</h3>
-            <div class="education-meta">
-                <span class="institution">SMK Negeri 3 Banjar, Banjar</span>
-                <span class="date">2020 - 2023</span>
-            </div>
-            <ul class="education-description">
-                <li>Graduated with high marks, achieving an overall average score of 85/100.</li>
-                <li>Achieved an 'A' grade on the Vocational Competency Examination for the software engineering major.
-                </li>
-            </ul>
+        <div v-else-if="isError" class="state-container">
+            <AlertCircle :size="32" class="text-red-500 mb-2" />
+            <p>Gagal memuat data pendidikan.</p>
         </div>
+
+        <div v-else>
+            <div 
+                v-for="item in educations" 
+                :key="item.id" 
+                class="education-item"
+            >
+                <h3>{{ item.degree }}</h3>
+                
+                <div class="education-meta">
+                    <span class="institution">
+                        {{ item.institution }}<span v-if="item.location">, {{ item.location }}</span>
+                    </span>
+                    
+                    <span class="date">
+                        {{ item.duration_string }}
+                    </span>
+                </div>
+
+                <ul class="education-description">
+                    <li v-if="item.score">
+                        Score/GPA: {{ item.score }}
+                    </li>
+
+                    <li v-for="(desc, index) in item.description" :key="index">
+                        {{ desc }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -72,5 +97,23 @@
     line-height: 1.8;
     color: var(--text-gray);
     padding-left: 20px;
+}
+
+.state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--text-gray);
+    font-size: 14px;
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 </style>

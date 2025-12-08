@@ -1,65 +1,38 @@
 <script setup>
+import { computed } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+import { Loader2, AlertCircle } from 'lucide-vue-next';
+
+const { data: skills, isLoading, isError } = useQuery({
+    queryKey: ['skills'],
+    queryFn: () => api('/skills'),
+    staleTime: 1000 * 60 * 60,
+});
 </script>
 
 <template>
     <div class="skills-list">
 
-        <div class="skill-category">
-            <h2>Languages</h2>
-            <div class="skills-grid">
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/303600/typescript-logo.svg" alt="TypeScript Logo">
-                    <p>TypeScript</p>
-                </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/353631/dart.svg" alt="Dart Logo">
-                    <p>Dart</p>
-                </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/452091/python.svg" alt="Python Logo">
-                    <p>Python</p>
-                </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/508936/php02.svg" alt="PHP Logo">
-                    <p>PHP</p>
-                </div>
-            </div>
+        <div v-if="isLoading" class="state-container">
+            <Loader2 class="animate-spin" :size="32" color="#FB923C" />
+            <p>Loading skills...</p>
         </div>
 
-        <div class="skill-category">
-            <h2>Frameworks</h2>
-            <div class="skills-grid">
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/330398/express.svg" alt="ExpressJS Logo">
-                    <p>ExpressJS</p>
-                </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/353985/laravel.svg" alt="Laravel Logo">
-                    <p>Laravel</p>
-                </div>
-            </div>
+        <div v-else-if="isError" class="state-container">
+            <AlertCircle :size="32" class="text-red-500 mb-2" />
+            <p>Gagal memuat data skills.</p>
         </div>
 
-        <div class="skill-category">
-            <h2>Libraries</h2>
-            <div class="skills-grid">
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/373776/light-prisma.svg" alt="Prisma Logo">
-                    <p>Prisma</p>
-                </div>
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/373701/jest-snapshot.svg" alt="Jest Logo">
-                    <p>Jest</p>
-                </div>
-            </div>
-        </div>
+        <div v-else>
+            <div v-for="group in skills" :key="group.category" class="skill-category">
+                <h2>{{ group.category }}</h2>
 
-        <div class="skill-category">
-            <h2>Databases</h2>
-            <div class="skills-grid">
-                <div class="skill-item">
-                    <img src="https://www.svgrepo.com/show/303251/mysql-logo.svg" alt="MySQL Logo">
-                    <p>MySQL</p>
+                <div class="skills-grid">
+                    <div v-for="skill in group.items" :key="skill.id" class="skill-item">
+                        <img :src="skill.logo_url || 'https://via.placeholder.com/48'" :alt="skill.name + ' Logo'">
+                        <p>{{ skill.name }}</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -109,29 +82,41 @@
     transform: translateY(-5px);
 }
 
-/* Modifikasi CSS untuk tag <img> */
 .skill-item img {
-    /* Mengganti .skill-item i dengan .skill-item img */
     width: 48px;
-    /* Atur lebar gambar */
     height: 48px;
-    /* Atur tinggi gambar (bisa juga 'auto' untuk menjaga rasio aspek) */
     object-fit: contain;
-    /* Memastikan gambar pas tanpa terpotong */
-    /* Jika Anda ingin sedikit efek warna seperti ikon, bisa pakai filter */
-    /* filter: grayscale(100%); */
-    /* transition: filter 0.3s ease; */
 }
-
-/* Optional: Jika hover ingin mengembalikan warna */
-/* .skill-item:hover img {
-    filter: grayscale(0%);
-} */
 
 .skill-item p {
     font-size: 13px;
     font-weight: 500;
     color: var(--text-gray);
     text-align: center;
+}
+
+.state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--text-gray);
+    font-size: 14px;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

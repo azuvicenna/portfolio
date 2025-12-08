@@ -1,31 +1,64 @@
 <script setup>
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+import { Loader2, AlertCircle } from 'lucide-vue-next';
+
+const { data: profile, isLoading, isError } = useQuery({
+    queryKey: ['about'],
+    queryFn: () => api('/about'),
+    staleTime: 1000 * 60 * 60, 
+});
 </script>
 
 <template>
     <div class="about">
-        <div class="title-name">
-            <h2>Atyla A. Al Harits</h2>
-            <h3>Backend Developer | Information System Student</h3>
+
+        <div v-if="isLoading" class="loading-container">
+            <Loader2 class="animate-spin" :size="32" color="#FB923C" />
         </div>
 
-        <p>
-            As a <strong>Backend Developer</strong> and an Information Systems undergraduate, I specialize in building scalable
-            server-side solutions with a tech stack including TypeScript, ExpressJS, Laravel, and MySQL.
-        </p>
-        <p>
-            I have a great passion for technology and am actively developing my competencies in Mobile Development
-            (Flutter) and Machine Learning. I am looking for an opportunity to contribute my technical expertise to
-            innovative and impactful projects.
-        </p>
-        <p>
-            Let's connect through <a href="https://www.linkedin.com/in/atyla-azfa-al-harits/" target="_blank">LinkedIn</a>, we
-            can
-            share insights, innovative ideas and valuable collaboration opportunities!
-        </p>
+        <div v-else-if="isError" class="loading-container">
+            <AlertCircle :size="32" class="text-red-500 mb-2" />
+            <p>Gagal memuat data.</p>
+        </div>
+
+        <div v-else>
+            <div class="title-name">
+                <h2>{{ profile.full_name }}</h2>
+                <h3>{{ profile.headline }}</h3>
+            </div>
+
+            <div class="bio-content" v-html="profile.bio"></div>
+        </div>
+
     </div>
 </template>
 
 <style scoped>
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 0;
+    color: var(--text-gray);
+    font-size: 14px;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .title-name {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -46,7 +79,7 @@
     text-transform: uppercase;
 }
 
-.about p {
+.bio-content :deep(p) {
     font-size: 14px;
     line-height: 1.8;
     margin-bottom: 25px;
@@ -55,18 +88,19 @@
     max-width: 700px;
 }
 
-.about p strong {
+.bio-content :deep(strong),
+.bio-content :deep(b) {
     font-weight: 600;
     color: var(--text-dark);
 }
 
-.about p a {
+.bio-content :deep(a) {
     color: var(--text-orange);
     text-decoration: none;
     font-weight: 600;
 }
 
-.about p a:hover {
+.bio-content :deep(a:hover) {
     text-decoration: underline;
 }
 </style>

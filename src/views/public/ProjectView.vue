@@ -1,52 +1,51 @@
 <script setup>
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+import { Loader2, AlertCircle } from 'lucide-vue-next';
+
+const { data: projects, isLoading, isError } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => api('/projects'),
+    staleTime: 1000 * 60 * 5,
+});
 </script>
 
 <template>
     <div class="projects-list">
 
-        <div class="project-category">
-            <h2>Web Development</h2>
-            <div class="projects-grid">
-                <div class="project-item">
-                    <div class="project-image">
-                        <img src="https://i.pinimg.com/736x/63/69/08/636908b58c8bd1ec2903f7da5ea31000.jpg" alt="Gambar">
-                    </div>
-                    <div class="project-content">
-                        <h3>Not Added Yet</h3>
-                        <p class="project-tech"><strong>Tools:</strong> None</p>
-                        <p class="project-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam a, officiis ipsum deserunt inventore iusto.</p>
-                    </div>
-                </div>
-            </div>
+        <div v-if="isLoading" class="state-container">
+            <Loader2 class="animate-spin" :size="32" color="#FB923C" />
+            <p>Loading projects...</p>
         </div>
 
-        <div class="project-category">
-            <h2>Mobile Development</h2>
-            <div class="projects-grid">
-                <div class="project-item">
-                    <div class="project-image">
-                        <img src="https://i.pinimg.com/736x/63/69/08/636908b58c8bd1ec2903f7da5ea31000.jpg" alt="Gambar">
-                    </div>
-                    <div class="project-content">
-                        <h3>Not Added Yet</h3>
-                        <p class="project-tech"><strong>Tools:</strong> None</p>
-                        <p class="project-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam a, officiis ipsum deserunt inventore iusto.</p>
-                    </div>
-                </div>
-            </div>
+        <div v-else-if="isError" class="state-container">
+            <AlertCircle :size="32" class="text-red-500 mb-2" />
+            <p>Gagal memuat data projects.</p>
         </div>
 
-        <div class="project-category">
-            <h2>Machine Learning</h2>
-            <div class="projects-grid">
-                <div class="project-item">
-                    <div class="project-image">
-                        <img src="https://i.pinimg.com/736x/63/69/08/636908b58c8bd1ec2903f7da5ea31000.jpg" alt="Gambar">
-                    </div>
-                    <div class="project-content">
-                        <h3>Not Added Yet</h3>
-                        <p class="project-tech"><strong>Tools:</strong> None</p>
-                        <p class="project-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam a, officiis ipsum deserunt inventore iusto.</p>
+        <div v-else>
+            <div v-for="group in projects" :key="group.category" class="project-category">
+                <h2>{{ group.category }}</h2>
+
+                <div class="projects-grid">
+                    <div v-for="project in group.items" :key="project.id" class="project-item">
+                        <div class="project-image">
+                            <img :src="project.image_url || 'https://via.placeholder.com/400x250?text=No+Image'"
+                                :alt="project.title">
+                        </div>
+
+                        <div class="project-content">
+                            <h3>{{ project.title }}</h3>
+
+                            <p class="project-tech">
+                                <strong>Tools:</strong>
+                                {{ project.tools && project.tools.length ? project.tools.join(', ') : 'None' }}
+                            </p>
+
+                            <p class="project-description">
+                                {{ project.summary || 'No description available.' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,5 +121,30 @@
     font-size: 13px;
     line-height: 1.7;
     color: var(--text-gray);
+}
+
+.state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--text-gray);
+    font-size: 14px;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

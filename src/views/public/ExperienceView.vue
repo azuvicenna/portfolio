@@ -1,54 +1,48 @@
 <script setup>
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+import { Loader2, AlertCircle } from 'lucide-vue-next';
+
+const { data: experiences, isLoading, isError } = useQuery({
+    queryKey: ['experiences'],
+    queryFn: () => api('/experiences'),
+    staleTime: 1000 * 60 * 5,
+});
 </script>
 
 <template>
     <div class="experience-list">
 
-        <div class="experience-item">
-            <h3>Web Developer</h3>
-            <div class="experience-meta">
-                <span class="company">Diskominfo | Tasikmalaya</span>
-                <span class="date">Sep 2025 - Now</span>
-            </div>
-            <ul class="experience-description">
-                <li>Developed the SIMGos web application from conception to deployment.</li>
-                <li>Designed and implemented comprehensive reports for public health centers and hospitals using
-                    Jaspersoft Studio and complex SQL queries.</li>
-                <li>Executed data cleaning and preparation processes using Google Sheets, and imported the sanitized
-                    data into the database with Navicat.</li>
-            </ul>
+        <div v-if="isLoading" class="state-container">
+            <Loader2 class="animate-spin" :size="32" color="#FB923C" />
+            <p>Loading experiences...</p>
         </div>
 
-        <div class="experience-item">
-            <h3>Freelance Web Developer</h3>
-            <div class="experience-meta">
-                <span class="company">Self-Employed | Tasikmalaya</span>
-                <span class="date">Oct 2024 - Aug 2025</span>
-            </div>
-            <ul class="experience-description">
-                <li>
-                    Developed a digital community platform for Serang Village to foster resident interaction and
-                    streamline information sharing.
-                </li>
-                <li>
-                    Engineered an integrated application for Kaputihan Village, featuring a Geographic Information
-                    System (GIS) and a digital marketplace to promote local MSMEs.
-                </li>
-            </ul>
+        <div v-else-if="isError" class="state-container">
+            <AlertCircle :size="32" class="text-red-500 mb-2" />
+            <p>Gagal memuat data experiences.</p>
         </div>
 
-        <div class="experience-item">
-            <h3>Student Intern</h3>
-            <div class="experience-meta">
-                <span class="company">Mutiara Digital Printing | Banjar</span>
-                <span class="date">Feb 2022 - Apr 2022</span>
+        <div v-else>
+            <div v-for="item in experiences" :key="item.id" class="experience-item">
+                <h3>{{ item.position }}</h3>
+
+                <div class="experience-meta">
+                    <span class="company">
+                        {{ item.company }} <span v-if="item.location">| {{ item.location }}</span>
+                    </span>
+
+                    <span class="date">
+                        {{ item.duration_string }}
+                    </span>
+                </div>
+
+                <ul class="experience-description" v-if="item.description && item.description.length">
+                    <li v-for="(desc, index) in item.description" :key="index">
+                        {{ desc }}
+                    </li>
+                </ul>
             </div>
-            <ul class="experience-description">
-                <li>
-                    Engineered a custom e-commerce platform for a printing services business, built upon the Codeigniter
-                    4 framework.
-                </li>
-            </ul>
         </div>
 
     </div>
@@ -96,5 +90,30 @@
     color: var(--text-gray);
     padding-left: 20px;
     list-style: disc;
+}
+
+.state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: var(--text-gray);
+    font-size: 14px;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

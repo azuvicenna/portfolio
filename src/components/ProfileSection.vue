@@ -1,20 +1,20 @@
 <script setup>
-defineProps({
-  imageUrl: {
-    type: String,
-    default: 'makima.png'
-  }
-})
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
+
+const { data: profile, isLoading } = useQuery({
+  queryKey: ['about'],
+  queryFn: () => api('/about'),
+  staleTime: 1000 * 60 * 60,
+});
 </script>
 
 <template>
   <div class="profile-section">
-    <div 
-      class="profile-image-container" 
-      :style="{ backgroundImage: `url(${imageUrl})` }"
-      aria-label="Foto Profil"
-    >
-      </div>
+    <div class="profile-image-container" :style="{
+      backgroundImage: `url(${profile?.avatar_url || 'makima.png'})`
+    }" aria-label="Foto Profil">
+    </div>
   </div>
 </template>
 
@@ -30,11 +30,11 @@ defineProps({
 .profile-image-container {
   width: 280px;
   height: 280px;
-  
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  
+
   border-bottom-left-radius: 70px;
   border-bottom: 40px solid var(--border-color);
 }

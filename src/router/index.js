@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import MainLayout from "@/layout/MainLayout.vue";
 import AdminLayout from "@/layout/AdminLayout.vue";
+import BlogDetailLayout from "@/layout/BlogDetailLayout.vue";
 
 import LoginView from "@/views/auth/LoginView.vue";
 
@@ -10,7 +11,9 @@ import ExperienceView from "@/views/public/ExperienceView.vue";
 import EducationView from "@/views/public/EducationView.vue";
 import SkillView from "@/views/public/SkillView.vue";
 import ProjectView from "@/views/public/ProjectView.vue";
+import ProjectDetailView from "@/views/public/ProjectDetailView.vue";
 import BlogView from "@/views/public/BlogView.vue";
+import BlogDetailView from "@/views/public/BlogDetailView.vue";
 import Guestbook from "@/views/public/Guestbook.vue";
 
 import AdminDashboardView from "@/views/admin/AdminDashboardView.vue";
@@ -167,6 +170,30 @@ const router = createRouter({
           name: "admin-guestbook",
           component: AdminGuestbookView,
           meta: { title: "Guestbook" },
+        },
+      ],
+    },
+    {
+      path: "/blogs/:slug",
+      component: BlogDetailLayout,
+      children: [
+        {
+          path: "",
+          name: "blog-detail",
+          component: BlogDetailView,
+          meta: { title: "Article" },
+        },
+      ],
+    },
+    {
+      path: "/projects/:slug",
+      component: BlogDetailLayout,
+      children: [
+        {
+          path: "",
+          name: "project-detail",
+          component: ProjectDetailView,
+          meta: { title: "Project Showcase" },
         },
       ],
     },
