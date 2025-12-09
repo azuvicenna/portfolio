@@ -1,13 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Wrench,
-  Link,
-  Loader2
+  Plus, Pencil, Trash2, X, Wrench, Link, Loader2, AlertTriangle
 } from 'lucide-vue-next';
 
 // --- STATE ---
@@ -15,7 +9,11 @@ const isModalOpen = ref(false);
 const isEditing = ref(false);
 const isSubmitting = ref(false);
 
-const categories = ['Languages', 'Frameworks', 'Databases', 'Tools'];
+// --- STATE DELETE MODAL (BARU) ---
+const isDeleteModalOpen = ref(false);
+const itemToDelete = ref(null);
+
+const categories = ['Languages', 'Frameworks', 'Databases', 'Tools', 'Cloud'];
 
 const form = ref({
   id: null,
@@ -25,31 +23,14 @@ const form = ref({
   logoUrl: ''
 });
 
+// Data Dummy
 const skills = ref([
-  {
-    id: 1,
-    name: 'TypeScript',
-    category: 'Languages',
-    displayOrder: 1,
-    logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg'
-  },
-  {
-    id: 2,
-    name: 'Vue.js',
-    category: 'Frameworks',
-    displayOrder: 2,
-    logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg'
-  },
-  {
-    id: 3,
-    name: 'PostgreSQL',
-    category: 'Databases',
-    displayOrder: 3,
-    logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg'
-  },
+  { id: 1, name: 'TypeScript', category: 'Languages', displayOrder: 1, logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
+  { id: 2, name: 'Vue.js', category: 'Frameworks', displayOrder: 2, logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg' },
+  { id: 3, name: 'PostgreSQL', category: 'Databases', displayOrder: 3, logoUrl: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg' },
 ]);
 
-// --- HELPER FUNCTIONS ---
+// Helper
 const getCategoryColor = (category) => {
   switch (category) {
     case 'Languages': return 'bg-blue-50 text-blue-600 border-blue-100';
@@ -59,16 +40,10 @@ const getCategoryColor = (category) => {
   }
 };
 
-// --- MODAL LOGIC ---
+// --- MODAL LOGIC (CREATE/EDIT) ---
 const openCreateModal = () => {
   isEditing.value = false;
-  form.value = {
-    id: null,
-    name: '',
-    category: categories[0],
-    displayOrder: skills.value.length + 1,
-    logoUrl: ''
-  };
+  form.value = { id: null, name: '', category: categories[0], displayOrder: skills.value.length + 1, logoUrl: '' };
   isModalOpen.value = true;
 };
 
@@ -78,38 +53,42 @@ const openEditModal = (item) => {
   isModalOpen.value = true;
 };
 
-const closeModal = () => {
-  isModalOpen.value = false;
-};
+const closeModal = () => isModalOpen.value = false;
 
-// --- CRUD LOGIC (SIMULASI) ---
 const saveSkill = () => {
   isSubmitting.value = true;
-
   setTimeout(() => {
     if (isEditing.value) {
       const index = skills.value.findIndex(s => s.id === form.value.id);
-      if (index !== -1) {
-        skills.value[index] = { ...form.value };
-      }
+      if (index !== -1) skills.value[index] = { ...form.value };
     } else {
-      skills.value.push({
-        ...form.value,
-        id: Date.now()
-      });
+      skills.value.push({ ...form.value, id: Date.now() });
     }
-
     skills.value.sort((a, b) => a.displayOrder - b.displayOrder);
-
     isSubmitting.value = false;
     closeModal();
   }, 800);
 };
 
-const deleteSkill = (id) => {
-  if (confirm('Are you sure you want to delete this skill?')) {
-    skills.value = skills.value.filter(s => s.id !== id);
-  }
+// --- LOGIC DELETE (BARU) ---
+const confirmDelete = (item) => {
+  itemToDelete.value = item;
+  isDeleteModalOpen.value = true;
+};
+
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false;
+  itemToDelete.value = null;
+};
+
+const deleteSkill = () => {
+  if (!itemToDelete.value) return;
+  isSubmitting.value = true;
+  setTimeout(() => {
+    skills.value = skills.value.filter(s => s.id !== itemToDelete.value.id);
+    isSubmitting.value = false;
+    closeDeleteModal();
+  }, 800);
 };
 </script>
 
@@ -121,7 +100,6 @@ const deleteSkill = (id) => {
         <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Tech Stack</h1>
         <p class="text-slate-500 mt-1">Manage programming languages, frameworks, and tools.</p>
       </div>
-
       <button @click="openCreateModal"
         class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-medium group">
         <Plus :size="20" class="group-hover:rotate-90 transition transform duration-300" />
@@ -130,9 +108,8 @@ const deleteSkill = (id) => {
     </div>
 
     <div class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
-
-      <div v-if="skills.length === 0" class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
-        <Wrench :size="48" class="mb-4 opacity-50" />
+      <div v-if="skills.length === 0" class="p-12 text-center text-slate-400">
+        <Wrench :size="48" class="mb-4 opacity-50 mx-auto" />
         <p>No skills added yet.</p>
       </div>
 
@@ -147,7 +124,6 @@ const deleteSkill = (id) => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
-
           <tr v-for="item in skills" :key="item.id" class="group hover:bg-gray-50/80 transition duration-200">
             <td class="px-8 py-4">
               <div
@@ -156,37 +132,31 @@ const deleteSkill = (id) => {
                 <Wrench v-else class="text-gray-300" />
               </div>
             </td>
-
             <td class="px-6 py-4">
               <h3 class="font-bold text-slate-800 text-base">{{ item.name }}</h3>
             </td>
-
             <td class="px-6 py-4">
               <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border"
                 :class="getCategoryColor(item.category)">
                 {{ item.category }}
               </span>
             </td>
-
             <td class="px-6 py-4 text-center text-sm font-medium text-slate-500">
               {{ item.displayOrder }}
             </td>
-
             <td class="px-8 py-4 text-right">
               <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button @click="openEditModal(item)"
-                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
-                  title="Edit">
+                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
                   <Pencil :size="16" />
                 </button>
-                <button @click="deleteSkill(item.id)"
-                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Delete">
+                <button @click="confirmDelete(item)"
+                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition">
                   <Trash2 :size="16" />
                 </button>
               </div>
             </td>
           </tr>
-
         </tbody>
       </table>
     </div>
@@ -194,19 +164,14 @@ const deleteSkill = (id) => {
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="isModalOpen" class="fixed inset-0 z-[999] overflow-y-auto">
-
           <div class="flex min-h-full items-center justify-center p-4 text-center">
-
             <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
 
             <div
               class="relative z-10 w-full max-w-lg transform rounded-[2rem] bg-white p-8 text-left shadow-2xl transition-all border border-gray-100 my-8">
-
               <div class="flex items-center justify-between mb-8">
                 <div>
-                  <h2 class="text-2xl font-bold text-slate-800">
-                    {{ isEditing ? 'Edit Skill' : 'Add Skill' }}
-                  </h2>
+                  <h2 class="text-2xl font-bold text-slate-800">{{ isEditing ? 'Edit Skill' : 'Add Skill' }}</h2>
                   <p class="text-slate-400 text-sm">Add a new technology to your stack.</p>
                 </div>
                 <button @click="closeModal"
@@ -216,14 +181,12 @@ const deleteSkill = (id) => {
               </div>
 
               <form @submit.prevent="saveSkill" class="space-y-6">
-
                 <div class="space-y-2">
                   <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Skill Name</label>
                   <input v-model="form.name" type="text" placeholder="e.g. Docker"
                     class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800"
                     required />
                 </div>
-
                 <div class="grid grid-cols-2 gap-6">
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</label>
@@ -238,7 +201,6 @@ const deleteSkill = (id) => {
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800" />
                   </div>
                 </div>
-
                 <div class="space-y-2">
                   <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Logo URL
                     (CDN/Storage)</label>
@@ -252,20 +214,41 @@ const deleteSkill = (id) => {
                       class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800" />
                   </div>
                 </div>
-
                 <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
                   <button type="button" @click="closeModal"
-                    class="px-6 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-gray-50 transition">
-                    Cancel
-                  </button>
+                    class="px-6 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-gray-50 transition">Cancel</button>
                   <button type="submit" :disabled="isSubmitting"
-                    class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed">
-                    <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
-                    <span v-else>Save Skill</span>
+                    class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70">
+                    <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" /><span v-else>Save Skill</span>
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal">
+          </div>
+          <div
+            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
+              <AlertTriangle class="h-8 w-8 text-red-500" />
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Skill?</h3>
+            <p class="text-slate-500 text-sm mb-8">Are you sure you want to delete <strong class="text-slate-700">"{{
+                itemToDelete?.name }}"</strong>?</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button @click="closeDeleteModal"
+                class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">Cancel</button>
+              <button @click="deleteSkill" :disabled="isSubmitting"
+                class="flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-200 disabled:opacity-70">
+                <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" /><span v-else>Yes, Delete</span>
+              </button>
             </div>
           </div>
         </div>

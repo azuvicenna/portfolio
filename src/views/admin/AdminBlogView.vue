@@ -1,19 +1,18 @@
 <script setup>
 import { ref, watch } from 'vue';
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  BookOpen, 
-  Loader2,
-  Image as ImageIcon
+  Plus, Pencil, Trash2, X, BookOpen,
+  Loader2, AlertTriangle, Image as ImageIcon
 } from 'lucide-vue-next';
 
-// --- STATE ---
+// --- STATE UTAMA ---
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const isSubmitting = ref(false);
+
+// --- STATE DELETE MODAL (BARU) ---
+const isDeleteModalOpen = ref(false);
+const itemToDelete = ref(null);
 
 const form = ref({
   id: null,
@@ -25,9 +24,10 @@ const form = ref({
   isPublished: false,
   publishedAt: new Date().toISOString().split('T')[0],
   coverImage: '',
-  tags: '' 
+  tags: ''
 });
 
+// Data Dummy (Simulasi)
 const blogs = ref([
   {
     id: 1,
@@ -56,95 +56,83 @@ const blogs = ref([
 ]);
 
 // --- HELPER FUNCTIONS ---
-const generateSlug = (text) => {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
-};
+const generateSlug = (text) => text.toString().toLowerCase().trim()
+  .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Not set';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-// --- MODAL LOGIC ---
+// --- LOGIC: CREATE / EDIT ---
 const openCreateModal = () => {
   isEditing.value = false;
   form.value = {
-    id: null,
-    title: '',
-    slug: '',
-    summary: '',
-    content: '',
-    language: 'ID',
-    isPublished: false,
-    publishedAt: new Date().toISOString().split('T')[0],
-    coverImage: '',
-    tags: ''
+    id: null, title: '', slug: '', summary: '', content: '',
+    language: 'ID', isPublished: false, publishedAt: new Date().toISOString().split('T')[0],
+    coverImage: '', tags: ''
   };
   isModalOpen.value = true;
 };
 
 const openEditModal = (item) => {
   isEditing.value = true;
-  form.value = {
-    ...item,
-    tags: item.tags.join(', ')
-  };
+  form.value = { ...item, tags: item.tags.join(', ') };
   isModalOpen.value = true;
 };
 
-const closeModal = () => {
-  isModalOpen.value = false;
-};
+const closeModal = () => isModalOpen.value = false;
 
+// Auto-slug
 watch(() => form.value.title, (newTitle) => {
-  if (!isEditing.value && newTitle) {
-    form.value.slug = generateSlug(newTitle);
-  }
+  if (!isEditing.value && newTitle) form.value.slug = generateSlug(newTitle);
 });
 
 const saveBlog = () => {
   isSubmitting.value = true;
 
-  const tagsArray = form.value.tags
-    .split(',')
-    .map(t => t.trim())
-    .filter(t => t !== '');
-
-  const blogPayload = {
-    ...form.value,
-    tags: tagsArray,
-    publishedAt: form.value.isPublished ? form.value.publishedAt : null
-  };
-
+  // Simulasi Save
   setTimeout(() => {
+    const tagsArray = form.value.tags.split(',').map(t => t.trim()).filter(t => t !== '');
+    const payload = {
+      ...form.value,
+      tags: tagsArray,
+      publishedAt: form.value.isPublished ? form.value.publishedAt : null
+    };
+
     if (isEditing.value) {
       const index = blogs.value.findIndex(b => b.id === form.value.id);
-      if (index !== -1) {
-        blogs.value[index] = { ...blogPayload };
-      }
+      if (index !== -1) blogs.value[index] = { ...payload };
     } else {
-      blogs.value.unshift({
-        ...blogPayload,
-        id: Date.now()
-      });
+      blogs.value.unshift({ ...payload, id: Date.now() });
     }
 
     isSubmitting.value = false;
     closeModal();
-  }, 800);
+  }, 1000);
 };
 
-const deleteBlog = (id) => {
-  if (confirm('Are you sure you want to delete this article?')) {
-    blogs.value = blogs.value.filter(b => b.id !== id);
-  }
+// --- LOGIC: DELETE (BARU) ---
+const confirmDelete = (item) => {
+  itemToDelete.value = item;
+  isDeleteModalOpen.value = true;
+};
+
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false;
+  itemToDelete.value = null;
+};
+
+const deleteBlog = () => {
+  if (!itemToDelete.value) return;
+  isSubmitting.value = true;
+
+  // Simulasi Delete
+  setTimeout(() => {
+    blogs.value = blogs.value.filter(b => b.id !== itemToDelete.value.id);
+    isSubmitting.value = false;
+    closeDeleteModal();
+  }, 1000);
 };
 </script>
 
@@ -156,7 +144,6 @@ const deleteBlog = (id) => {
         <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Blog Posts</h1>
         <p class="text-slate-500 mt-1">Write, edit, and publish your thoughts.</p>
       </div>
-
       <button @click="openCreateModal"
         class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-medium group">
         <Plus :size="20" class="group-hover:rotate-90 transition transform duration-300" />
@@ -165,9 +152,8 @@ const deleteBlog = (id) => {
     </div>
 
     <div class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
-
-      <div v-if="blogs.length === 0" class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
-        <BookOpen :size="48" class="mb-4 opacity-50" />
+      <div v-if="blogs.length === 0" class="p-12 text-center text-slate-400">
+        <BookOpen :size="48" class="mb-4 opacity-50 mx-auto" />
         <p>No articles yet.</p>
       </div>
 
@@ -181,7 +167,6 @@ const deleteBlog = (id) => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
-
           <tr v-for="item in blogs" :key="item.id" class="group hover:bg-gray-50/80 transition duration-200">
             <td class="px-8 py-5">
               <div class="flex gap-4">
@@ -196,23 +181,15 @@ const deleteBlog = (id) => {
                 </div>
               </div>
             </td>
-
             <td class="px-6 py-5">
               <div class="space-y-1">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
                   :class="item.isPublished ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-500 border-gray-200'">
-                  <svg v-if="item.isPublished" class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
                   {{ item.isPublished ? 'Published' : 'Draft' }}
                 </span>
-                <p class="text-xs text-gray-500 font-medium" :class="!item.isPublished ? 'italic' : ''">
-                  {{ formatDate(item.publishedAt) }}
-                </p>
+                <p class="text-xs text-gray-400 font-medium">{{ formatDate(item.publishedAt) }}</p>
               </div>
             </td>
-
             <td class="px-6 py-5">
               <div class="flex flex-wrap gap-1">
                 <span v-for="tag in item.tags" :key="tag"
@@ -221,22 +198,19 @@ const deleteBlog = (id) => {
                 </span>
               </div>
             </td>
-
             <td class="px-8 py-5 text-right">
               <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button @click="openEditModal(item)"
-                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
-                  title="Edit">
+                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
                   <Pencil :size="16" />
                 </button>
-                <button @click="deleteBlog(item.id)"
-                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Delete">
+                <button @click="confirmDelete(item)"
+                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition">
                   <Trash2 :size="16" />
                 </button>
               </div>
             </td>
           </tr>
-
         </tbody>
       </table>
     </div>
@@ -244,9 +218,7 @@ const deleteBlog = (id) => {
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="isModalOpen" class="fixed inset-0 z-[999] overflow-y-auto">
-
           <div class="flex min-h-full items-center justify-center p-4 text-center">
-
             <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
 
             <div
@@ -254,8 +226,7 @@ const deleteBlog = (id) => {
 
               <div class="flex items-center justify-between mb-6 flex-shrink-0">
                 <div>
-                  <h2 class="text-2xl font-bold text-slate-800">
-                    {{ isEditing ? 'Edit Article' : 'Write New Article' }}
+                  <h2 class="text-2xl font-bold text-slate-800">{{ isEditing ? 'Edit Article' : 'Write New Article' }}
                   </h2>
                   <p class="text-slate-400 text-sm">Share your knowledge.</p>
                 </div>
@@ -266,25 +237,21 @@ const deleteBlog = (id) => {
               </div>
 
               <form @submit.prevent="saveBlog" class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 overflow-hidden">
-
                 <div class="md:col-span-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar border-r border-gray-100">
-
                   <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">Publish
                       Status</label>
                     <div class="flex items-center gap-3 mb-4">
                       <input v-model="form.isPublished" type="checkbox" id="published"
                         class="w-5 h-5 text-green-600 rounded focus:ring-green-500 border-gray-300">
-                      <label for="published" class="text-sm font-bold text-slate-700 cursor-pointer select-none">Publish
-                        Now</label>
+                      <label for="published" class="text-sm font-bold text-slate-700 cursor-pointer">Publish Now</label>
                     </div>
                     <div class="space-y-2">
                       <label class="text-xs font-bold text-slate-400">Date</label>
                       <input v-model="form.publishedAt" type="date"
-                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none transition focus:border-indigo-500">
+                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none">
                     </div>
                   </div>
-
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Language</label>
                     <select v-model="form.language"
@@ -293,75 +260,103 @@ const deleteBlog = (id) => {
                       <option value="EN">English</option>
                     </select>
                   </div>
-
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cover Image URL</label>
+
                     <div
-                      class="aspect-video bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 border border-dashed border-gray-300 overflow-hidden">
-                      <img v-if="form.coverImage" :src="form.coverImage" class="w-full h-full object-cover" />
-                      <span v-else class="text-xs">Preview</span>
+                      class="aspect-video bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 border border-dashed border-gray-300 overflow-hidden relative">
+                      <img v-if="form.coverImage" :src="form.coverImage" class="w-full h-full object-cover"
+                        alt="Cover Preview"
+                        @error="$event.target.src = 'https://via.placeholder.com/300?text=Invalid+URL'" />
+                      <div v-else class="flex flex-col items-center gap-2">
+                        <ImageIcon :size="24" />
+                        <span class="text-xs">No image selected</span>
+                      </div>
                     </div>
+
                     <input v-model="form.coverImage" type="url" placeholder="https://..."
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 text-sm" />
+                    <p class="text-[10px] text-slate-400">Paste public URL from Supabase Storage or Unsplash.</p>
                   </div>
-
                 </div>
 
                 <div class="md:col-span-3 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-
-                  <div class="grid grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Title</label>
-                      <input v-model="form.title" type="text" placeholder="Article Title"
-                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-bold text-lg"
-                        required />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Slug</label>
-                      <input v-model="form.slug" type="text" placeholder="article-title"
-                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800"
-                        required />
-                    </div>
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Title</label>
+                    <input v-model="form.title" type="text"
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-bold text-lg"
+                      required />
                   </div>
-
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Slug</label>
+                    <input v-model="form.slug" type="text"
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800"
+                      required />
+                  </div>
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Summary</label>
-                    <textarea v-model="form.summary" rows="2" placeholder="Brief description..."
+                    <textarea v-model="form.summary" rows="2"
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 resize-none"></textarea>
                   </div>
-
-                  <div class="space-y-2 h-full flex flex-col min-h-[400px]">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider flex justify-between">
-                      <span>Content (Markdown)</span>
-                      <span class="text-indigo-600 cursor-pointer hover:underline">Preview</span>
-                    </label>
+                  <div class="space-y-2 h-full flex flex-col min-h-[300px]">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Content (Markdown)</label>
                     <textarea v-model="form.content"
-                      class="flex-1 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-mono text-sm leading-relaxed resize-none"
-                      placeholder="# Write something amazing..."></textarea>
+                      class="flex-1 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 font-mono text-sm leading-relaxed resize-none"></textarea>
                   </div>
-
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tags</label>
-                    <input v-model="form.tags" type="text" placeholder="tech, tutorial, life (comma separated)"
+                    <input v-model="form.tags" type="text" placeholder="comma separated"
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800" />
                   </div>
-
                   <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
                     <button type="button" @click="closeModal"
-                      class="px-6 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-gray-50 transition">
-                      Cancel
-                    </button>
+                      class="px-6 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-gray-50 transition">Cancel</button>
                     <button type="submit" :disabled="isSubmitting"
-                      class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                      class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-70">
                       <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
                       <span v-else>Save Article</span>
                     </button>
                   </div>
-
                 </div>
               </form>
-
             </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+
+          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal">
+          </div>
+
+          <div
+            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
+
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
+              <AlertTriangle class="h-8 w-8 text-red-500" />
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Article?</h3>
+            <p class="text-slate-500 text-sm mb-8">
+              Are you sure you want to delete <strong class="text-slate-700">"{{ itemToDelete?.title }}"</strong>?
+              This action cannot be undone.
+            </p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button @click="closeDeleteModal"
+                class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">
+                Cancel
+              </button>
+              <button @click="deleteBlog" :disabled="isSubmitting"
+                class="flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-200 disabled:opacity-70">
+                <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
+                <span v-else>Yes, Delete</span>
+              </button>
+            </div>
+
           </div>
         </div>
       </Transition>
@@ -381,7 +376,6 @@ const deleteBlog = (id) => {
   opacity: 0;
 }
 
-/* Custom Scrollbar for Modal content area */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

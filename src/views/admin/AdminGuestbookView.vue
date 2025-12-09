@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
+import { api } from '@/utils/api';
 import {
   Trash2,
   CheckCircle,
@@ -7,56 +9,52 @@ import {
   MessageSquare,
   Clock,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  AlertCircle,
+  AlertTriangle, // Icon Warning buat Modal
+  X
 } from 'lucide-vue-next';
 
-// --- STATE ---
+// --- STATE UTAMA ---
 const isSubmitting = ref(false);
-const filterStatus = ref('NEW');
+const filterStatus = ref('ALL');
 const tabs = ['NEW', 'APPROVED', 'REJECTED', 'ALL'];
 
-const messages = ref([
-  {
-    id: 1,
-    name: 'Budi Hartono',
-    email: 'budi@mail.com',
-    message: 'Keren banget portofolionya! Terutama bagian Project, rapih dan detail. Saya suka pemilihan warnanya. Sukses terus bang!',
-    status: 'NEW',
-    createdAt: '2025-11-28T10:00:00Z'
-  },
-  {
-    id: 2,
-    name: 'Siti Aminah',
-    email: 'siti@mail.com',
-    message: 'Apakah Anda terbuka untuk peluang freelance saat ini? Saya punya project web desa yang butuh bantuan.',
-    status: 'APPROVED',
-    createdAt: '2025-11-27T15:30:00Z'
-  },
-  {
-    id: 3,
-    name: 'John Doe',
-    email: 'john@spam.com',
-    message: 'Cheap web hosting services available here: [Link Removed]',
-    status: 'REJECTED',
-    createdAt: '2025-11-26T08:12:00Z'
-  },
-]);
+// --- STATE DELETE MODAL (BARU) ---
+const isDeleteModalOpen = ref(false);
+const itemToDelete = ref(null);
+
+// 1. Fetch Data Guestbook
+const { data: messages, isLoading, isError, refetch } = useQuery({
+  queryKey: ['guestbook-admin'],
+  queryFn: () => api('/guestbook'),
+  staleTime: 1000 * 60,
+});
 
 // --- COMPUTED ---
 const filteredMessages = computed(() => {
-  if (filterStatus.value === 'ALL') {
-    return messages.value;
-  }
+  if (!messages.value) return [];
+  if (filterStatus.value === 'ALL') return messages.value;
+
+  // Mapping is_visible (boolean) ke status string untuk filtering visual
+  // Asumsi: Backend mengembalikan array flat, kita filter manual di frontend
+  // NOTE: Sebaiknya backend mengirim status string, tapi jika boolean:
+  // True = Approved, False = Rejected. 'NEW' agak susah dideteksi hanya dari boolean 
+  // kecuali ada flag khusus. Untuk sekarang kita filter berdasarkan field 'status' 
+  // yang (diharapkan) dikirim backend atau kita mapping sendiri.
+
   return messages.value.filter(msg => msg.status === filterStatus.value);
 });
 
 const getCount = (status) => {
+  if (!messages.value) return 0;
   if (status === 'ALL') return messages.value.length;
   return messages.value.filter(msg => msg.status === status).length;
 };
 
 // --- HELPER ---
 const formatDateRelative = (dateString) => {
+  if (!dateString) return '';
   const date = new Date(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now - date) / 1000);
@@ -86,33 +84,57 @@ const getBorderColor = (status) => {
   }
 };
 
+const getInitial = (name) => name ? name.charAt(0).toUpperCase() : '?';
+
 // --- ACTIONS ---
+
+// 1. Update Status
 const updateStatus = (id, newStatus) => {
   isSubmitting.value = true;
+  // TODO: Integrasi API PUT Status
   setTimeout(() => {
-    const index = messages.value.findIndex(m => m.id === id);
-    if (index !== -1) {
-      messages.value[index].status = newStatus;
+    // Simulasi update lokal
+    if (messages.value) {
+      const index = messages.value.findIndex(m => m.id === id);
+      if (index !== -1) {
+        messages.value[index].status = newStatus;
+      }
     }
     isSubmitting.value = false;
   }, 500);
 };
 
-const deleteMessage = (id) => {
-  if (confirm('Are you sure you want to delete this message?')) {
-    isSubmitting.value = true;
-    setTimeout(() => {
-      messages.value = messages.value.filter(m => m.id !== id);
-      isSubmitting.value = false;
-    }, 500);
-  }
+// 2. Logic Delete Modal (BARU)
+const confirmDelete = (item) => {
+  itemToDelete.value = item;
+  isDeleteModalOpen.value = true;
+};
+
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false;
+  itemToDelete.value = null;
+};
+
+const deleteMessage = () => {
+  if (!itemToDelete.value) return;
+
+  isSubmitting.value = true;
+
+  // TODO: Integrasi API DELETE
+  setTimeout(() => {
+    // Simulasi hapus lokal (karena messages readonly dari useQuery, idealnya pakai queryClient)
+    // Disini kita hanya refresh data untuk simulasi
+    isSubmitting.value = false;
+    closeDeleteModal();
+    refetch();
+  }, 500);
 };
 
 const refreshData = () => {
   isSubmitting.value = true;
-  setTimeout(() => {
+  refetch().finally(() => {
     isSubmitting.value = false;
-  }, 1000);
+  });
 };
 </script>
 
@@ -126,9 +148,9 @@ const refreshData = () => {
           class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">Moderation</span>
       </div>
 
-      <button @click="refreshData" :disabled="isSubmitting"
+      <button @click="refreshData" :disabled="isSubmitting || isLoading"
         class="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition disabled:opacity-50">
-        <RefreshCw :size="16" :class="{ 'animate-spin': isSubmitting }" />
+        <RefreshCw :size="16" :class="{ 'animate-spin': isSubmitting || isLoading }" />
         <span>Refresh</span>
       </button>
     </div>
@@ -148,30 +170,44 @@ const refreshData = () => {
 
     <div class="space-y-4">
 
-      <div v-if="filteredMessages.length === 0"
+      <div v-if="isLoading" class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
+        <Loader2 :size="40" class="animate-spin text-indigo-500 mb-2" />
+        <p>Loading messages...</p>
+      </div>
+
+      <div v-else-if="isError" class="p-12 text-center flex flex-col items-center justify-center text-red-400">
+        <AlertCircle :size="40" class="mb-2" />
+        <p>Failed to load messages.</p>
+      </div>
+
+      <div v-else-if="filteredMessages.length === 0"
         class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
         <MessageSquare :size="48" class="mb-4 opacity-50" />
         <p>No messages found in {{ filterStatus.toLowerCase() }} folder.</p>
       </div>
 
-      <div v-for="msg in filteredMessages" :key="msg.id"
+      <div v-else v-for="msg in filteredMessages" :key="msg.id"
         class="bg-white p-6 rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-l-4 border-gray-100 group transition hover:shadow-lg"
         :class="getBorderColor(msg.status)">
         <div class="flex justify-between items-start mb-4">
           <div class="flex gap-4">
-            <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0" :class="{
-              'bg-blue-50 text-blue-600': msg.status === 'NEW',
-              'bg-green-50 text-green-600': msg.status === 'APPROVED',
-              'bg-red-50 text-red-600': msg.status === 'REJECTED'
-            }">
-              {{ msg.name.charAt(0).toUpperCase() }}
+            <div
+              class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden"
+              :class="{
+                'bg-blue-50 text-blue-600': msg.status === 'NEW',
+                'bg-green-50 text-green-600': msg.status === 'APPROVED',
+                'bg-red-50 text-red-600': msg.status === 'REJECTED',
+                'bg-gray-100 text-gray-600': !msg.status
+              }">
+              <img v-if="msg.visitors?.avatar_url" :src="msg.visitors.avatar_url" class="w-full h-full object-cover" />
+              <span v-else>{{ getInitial(msg.visitors?.name || 'A') }}</span>
             </div>
 
             <div>
-              <h3 class="font-bold text-slate-800 text-lg">{{ msg.name }}</h3>
-              <a :href="`mailto:${msg.email}`"
+              <h3 class="font-bold text-slate-800 text-lg">{{ msg.visitors?.name || 'Anonymous' }}</h3>
+              <a v-if="msg.visitors?.email" :href="`mailto:${msg.visitors.email}`"
                 class="text-sm text-gray-400 hover:text-indigo-600 transition flex items-center gap-1">
-                {{ msg.email }}
+                {{ msg.visitors.email }}
               </a>
             </div>
           </div>
@@ -179,10 +215,10 @@ const refreshData = () => {
           <div class="text-right">
             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
               :class="getStatusColor(msg.status)">
-              {{ msg.status }}
+              {{ msg.status || 'UNKNOWN' }}
             </span>
             <p class="text-xs text-gray-400 mt-1 font-medium flex items-center justify-end gap-1">
-              <Clock :size="12" /> {{ formatDateRelative(msg.createdAt) }}
+              <Clock :size="12" /> {{ formatDateRelative(msg.created_at) }}
             </p>
           </div>
         </div>
@@ -193,7 +229,7 @@ const refreshData = () => {
 
         <div class="flex justify-end gap-3 pt-4 border-t border-gray-50">
 
-          <button @click="deleteMessage(msg.id)" :disabled="isSubmitting"
+          <button @click="confirmDelete(msg)" :disabled="isSubmitting"
             class="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition font-bold text-sm disabled:opacity-50">
             <Trash2 :size="16" />
             <span>Delete</span>
@@ -218,8 +254,58 @@ const refreshData = () => {
 
         </div>
       </div>
-
     </div>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+
+          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal">
+          </div>
+
+          <div
+            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
+
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
+              <AlertTriangle class="h-8 w-8 text-red-500" />
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Message?</h3>
+            <p class="text-slate-500 text-sm mb-8">
+              Are you sure you want to delete this message from <strong class="text-slate-700">{{
+                itemToDelete?.visitors?.name || 'Anonymous' }}</strong>?
+              This action cannot be undone.
+            </p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button @click="closeDeleteModal"
+                class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">
+                Cancel
+              </button>
+
+              <button @click="deleteMessage" :disabled="isSubmitting"
+                class="flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
+                <span v-else>Yes, Delete</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
