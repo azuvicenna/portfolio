@@ -1,43 +1,50 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { supabase } from '@/config/supabase';
 import { Loader2, Lock, ArrowRight } from 'lucide-vue-next';
 
-const router = useRouter();
 const isLoading = ref(false);
 
-const handleLogin = (provider) => {
+const handleLogin = async (provider) => {
     isLoading.value = true;
-
-    setTimeout(() => {
+    try {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: provider,
+            options: {
+                redirectTo: window.location.origin + '/admin'
+            }
+        });
+        if (error) throw error;
+    } catch (error) {
+        alert(error.message);
         isLoading.value = false;
-        router.push('/admin');
-    }, 1500); 
+    }
 };
 </script>
 
 <template>
     <div
-        class="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden font-sans text-slate-800">
+        class="min-h-screen flex items-center justify-center bg-[#FDFBF5] relative overflow-hidden font-sans text-slate-800">
 
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
             <div
-                class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob">
+                class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob">
             </div>
             <div
-                class="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000">
+                class="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000">
             </div>
             <div
-                class="absolute top-[40%] left-[30%] w-[300px] h-[300px] bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000">
+                class="absolute top-[40%] left-[30%] w-[300px] h-[300px] bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000">
             </div>
         </div>
 
         <div
-            class="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-white/50">
+            class="relative z-10 w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-white/50">
 
             <div class="text-center mb-10">
                 <div
-                    class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-200 transform rotate-3 hover:rotate-0 transition duration-300">
+                    class="w-20 h-20 bg-gradient-to-tr from-orange-400 to-red-400 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-200 transform rotate-3 hover:rotate-0 transition duration-300">
                     <Lock class="text-white" :size="32" />
                 </div>
                 <h1 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">Welcome Back!</h1>
@@ -47,7 +54,7 @@ const handleLogin = (provider) => {
             <div class="space-y-4">
 
                 <button @click="handleLogin('google')" :disabled="isLoading"
-                    class="relative w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-200 rounded-2xl hover:bg-white hover:border-gray-300 hover:shadow-lg transition-all duration-200 font-bold text-slate-700 bg-white/50 group disabled:opacity-70 disabled:cursor-not-allowed">
+                    class="relative w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-200 rounded-2xl hover:bg-white hover:border-orange-200 hover:shadow-lg transition-all duration-200 font-bold text-slate-700 bg-white/50 group disabled:opacity-70 disabled:cursor-not-allowed">
                     <svg class="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                         <path
                             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -64,7 +71,7 @@ const handleLogin = (provider) => {
                     </svg>
                     <span>Continue with Google</span>
                     <ArrowRight v-if="!isLoading" :size="18"
-                        class="absolute right-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-slate-400" />
+                        class="absolute right-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-orange-400" />
                 </button>
 
                 <button @click="handleLogin('github')" :disabled="isLoading"
@@ -79,9 +86,9 @@ const handleLogin = (provider) => {
             </div>
 
             <div v-if="isLoading"
-                class="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-[2.5rem] flex flex-col items-center justify-center z-20">
-                <Loader2 class="animate-spin text-indigo-600 mb-2" :size="40" />
-                <p class="text-sm font-bold text-indigo-600 animate-pulse">Authenticating...</p>
+                class="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-[2.5rem] flex flex-col items-center justify-center z-20">
+                <Loader2 class="animate-spin text-orange-500 mb-2" :size="40" />
+                <p class="text-sm font-bold text-orange-500 animate-pulse">Authenticating...</p>
             </div>
         </div>
 

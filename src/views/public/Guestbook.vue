@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 import { supabase } from '@/config/supabase';
@@ -66,6 +66,14 @@ const handleSubmit = () => {
     if (!form.value.message) return;
     postMutation.mutate({ message: form.value.message });
 };
+
+const displayName = computed(() => {
+    if (!user.value) return '';
+
+    const meta = user.value.user_metadata;
+
+    return meta.full_name || meta.user_name || meta.preferred_username || user.value.email;
+});
 </script>
 
 <template>
@@ -73,16 +81,21 @@ const handleSubmit = () => {
 
         <div v-if="user" class="guestbook-form">
             <h3>Leave a Message</h3>
-            <p style="font-size: 14px; margin-bottom: 15px; color: var(--text-gray);">
-                Posting as <strong>{{ user.user_metadata.full_name }}</strong>
-            </p>
 
             <form @submit.prevent="handleSubmit">
+
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" :value="displayName" disabled
+                        style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;">
+                </div>
+
                 <div class="form-group">
                     <label for="message">Message</label>
                     <textarea v-model="form.message" id="message" name="message" rows="4"
                         placeholder="Write your message here..." required></textarea>
                 </div>
+
                 <button type="submit" :disabled="postMutation.isPending.value">
                     {{ postMutation.isPending.value ? 'Posting...' : 'Post Message' }}
                 </button>

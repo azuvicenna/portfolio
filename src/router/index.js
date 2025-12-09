@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { supabase } from "@/config/supabase";
 
 import MainLayout from "@/layout/MainLayout.vue";
 import AdminLayout from "@/layout/AdminLayout.vue";
@@ -108,6 +109,10 @@ const router = createRouter({
     {
       path: "/admin",
       component: AdminLayout,
+      meta: {
+        requiresAuth: true, // Wajib Login
+        requiresAdmin: true, // Wajib Admin
+      },
       children: [
         {
           path: "dashboard",
@@ -200,8 +205,51 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title + " - My Portfolio" || "My Portfolio";
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // ---------------------------------------------------------
+  // KASUS A: User SUDAH Login tapi iseng buka halaman /login
+  // ---------------------------------------------------------
+  if (to.path === "/login" && session) {
+    const { data: userData } = await supabase
+      .from("visitors")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (userData?.role === "admin") {
+      return next("/admin/dashboard");
+    } else {
+      return next("/");
+    }
+  }
+
+  // ---------------------------------------------------------
+  // KASUS B: Rute Wajib Login (requiresAuth)
+  // ---------------------------------------------------------
+  if (to.meta.requiresAuth && !session) {
+    return next("/login");
+  }
+
+  // ---------------------------------------------------------
+  // KASUS C: Rute Khusus Admin (requiresAdmin)
+  // ---------------------------------------------------------
+  if (to.meta.requiresAdmin) {
+    const { data: userData, error } = await supabase
+      .from("visitors")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (error || userData?.role !== "admin") {
+      return next("/");
+    }
+  }
 
   next();
 });

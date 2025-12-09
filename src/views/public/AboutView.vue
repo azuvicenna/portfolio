@@ -2,11 +2,12 @@
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 import { Loader2, AlertCircle } from 'lucide-vue-next';
+import { marked } from 'marked'; 
 
 const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['about'],
     queryFn: () => api('/about'),
-    staleTime: 1000 * 60 * 60, 
+    staleTime: 1000 * 60 * 60,
 });
 </script>
 
@@ -28,13 +29,14 @@ const { data: profile, isLoading, isError } = useQuery({
                 <h3>{{ profile.headline }}</h3>
             </div>
 
-            <div class="bio-content" v-html="profile.bio"></div>
+            <div class="bio-content" v-html="marked.parse(profile.bio || '')"></div>
         </div>
 
     </div>
 </template>
 
 <style scoped>
+/* STYLE ASLI ANDA (TETAP SAMA) */
 .loading-container {
     display: flex;
     flex-direction: column;
@@ -79,6 +81,7 @@ const { data: profile, isLoading, isError } = useQuery({
     text-transform: uppercase;
 }
 
+/* Style :deep() ini akan otomatis bekerja pada hasil render marked */
 .bio-content :deep(p) {
     font-size: 14px;
     line-height: 1.8;
