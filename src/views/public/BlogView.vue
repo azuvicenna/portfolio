@@ -1,18 +1,48 @@
 <script setup>
-import { useQuery } from '@tanstack/vue-query';
-import { api } from '@/utils/api';
-import { Loader2, AlertCircle } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { useQuery, keepPreviousData } from '@tanstack/vue-query';
+import { apiWithMeta } from '@/utils/api';
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
 
-const { data: blogs, isLoading, isError } = useQuery({
-    queryKey: ['blogs'], 
-    queryFn: () => api('/blogs'), 
-    staleTime: 1000 * 60 * 5, 
+const page = ref(1);
+const limit = 6;
+
+const { data: apiResponse, isLoading, isError } = useQuery({
+    queryKey: ['blogs', page],
+    queryFn: () => apiWithMeta(`/blogs?page=${page.value}&limit=${limit}`),
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5,
 });
+
+const blogs = computed(() => {
+    const res = apiResponse.value;
+    if (Array.isArray(res)) return res;
+    if (res?.data && Array.isArray(res.data)) return res.data;
+    return [];
+});
+
+const meta = computed(() => {
+    return apiResponse.value?.pagination || { total_pages: 1 };
+});
+
+const nextPage = () => {
+    if (meta.value && page.value < meta.value.total_pages) {
+        page.value++;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+const prevPage = () => {
+    if (page.value > 1) {
+        page.value--;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
 </script>
 
 <template>
-    <div class="blog-list">
+    <div class="blog-list-container">
 
         <div v-if="isLoading" class="state-container">
             <Loader2 class="animate-spin" :size="32" color="#FB923C" />
@@ -25,19 +55,34 @@ const { data: blogs, isLoading, isError } = useQuery({
         </div>
 
         <div v-else>
-            <RouterLink 
-                v-for="blog in blogs" 
-                :key="blog.id"
-                :to="`/blogs/${blog.slug}`" 
-                class="blog-item"
-            >
-                <div class="blog-avatar">{{ blog.language || 'ID' }}</div>
-                
-                <div class="blog-content">
-                    <h3 class="blog-title">{{ blog.title }}</h3>
-                    <span class="blog-date">{{ blog.published_at }}</span>
-                </div>
-            </RouterLink>
+            <div class="blog-list">
+                <RouterLink v-for="blog in blogs" :key="blog.id" :to="`/blogs/${blog.slug}`" class="blog-item">
+                    <div class="blog-avatar">{{ blog.language || 'ID' }}</div>
+                    <div class="blog-content">
+                        <h3 class="blog-title">{{ blog.title }}</h3>
+                        <span class="blog-date">{{ blog.published_at }}</span>
+                    </div>
+                </RouterLink>
+            </div>
+
+            <div class="pagination-controls" v-if="meta.total_pages > 1">
+
+                <button @click="prevPage" :disabled="page === 1" class="btn-page">
+                    <ChevronLeft :size="20" />
+                    Prev
+                </button>
+
+                <span class="page-info">
+                    Page <b>{{ page }}</b> of {{ meta.total_pages }}
+                </span>
+
+                <button @click="nextPage" :disabled="page >= meta.total_pages" class="btn-page">
+                    Next
+                    <ChevronRight :size="20" />
+                </button>
+
+            </div>
+
         </div>
 
     </div>
@@ -98,12 +143,61 @@ const { data: blogs, isLoading, isError } = useQuery({
     color: var(--text-gray);
     font-size: 14px;
 }
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px dashed #eee;
+}
+
+.btn-page {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background-color: white;
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+    background-color: var(--text-orange, #FB923C);
+    border-color: var(--text-orange, #FB923C);
+    color: white;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f9f9f9;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #666;
+}
+
 .animate-spin {
     animation: spin 1s linear infinite;
     margin-bottom: 10px;
 }
+
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>
