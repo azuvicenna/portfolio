@@ -43,10 +43,6 @@ const handleLogin = async (provider) => {
             class="relative z-10 w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-white/50">
 
             <div class="text-center mb-10">
-                <div
-                    class="w-20 h-20 bg-gradient-to-tr from-orange-400 to-red-400 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-200 transform rotate-3 hover:rotate-0 transition duration-300">
-                    <Lock class="text-white" :size="32" />
-                </div>
                 <h1 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">Welcome Back!</h1>
                 <p class="text-slate-500">Sign in to manage your portfolio.</p>
             </div>

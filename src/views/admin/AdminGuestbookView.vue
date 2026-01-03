@@ -1,299 +1,315 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
+import { supabase } from '@/config/supabase';
 import {
-  Trash2,
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  Clock,
-  Loader2,
-  RefreshCw,
-  AlertCircle,
-  AlertTriangle, // Icon Warning buat Modal
-  X
+  Trash2, MessageSquare, Loader2, AlertTriangle,
+  CheckCircle, XCircle, RefreshCw, ChevronLeft, ChevronRight,
+  Eye, EyeOff // Import Icon Mata
 } from 'lucide-vue-next';
 
-// --- STATE UTAMA ---
-const isSubmitting = ref(false);
-const filterStatus = ref('ALL');
-const tabs = ['NEW', 'APPROVED', 'REJECTED', 'ALL'];
-
-// --- STATE DELETE MODAL (BARU) ---
+// --- SETUP ---
+const queryClient = useQueryClient();
 const isDeleteModalOpen = ref(false);
 const itemToDelete = ref(null);
 
-// 1. Fetch Data Guestbook
-const { data: messages, isLoading, isError, refetch } = useQuery({
-  queryKey: ['guestbook-admin'],
-  queryFn: () => api('/guestbook'),
-  staleTime: 1000 * 60,
-});
+// Pagination State
+const page = ref(1);
+const limit = 10;
 
-// --- COMPUTED ---
-const filteredMessages = computed(() => {
-  if (!messages.value) return [];
-  if (filterStatus.value === 'ALL') return messages.value;
-
-  // Mapping is_visible (boolean) ke status string untuk filtering visual
-  // Asumsi: Backend mengembalikan array flat, kita filter manual di frontend
-  // NOTE: Sebaiknya backend mengirim status string, tapi jika boolean:
-  // True = Approved, False = Rejected. 'NEW' agak susah dideteksi hanya dari boolean 
-  // kecuali ada flag khusus. Untuk sekarang kita filter berdasarkan field 'status' 
-  // yang (diharapkan) dikirim backend atau kita mapping sendiri.
-
-  return messages.value.filter(msg => msg.status === filterStatus.value);
-});
-
-const getCount = (status) => {
-  if (!messages.value) return 0;
-  if (status === 'ALL') return messages.value.length;
-  return messages.value.filter(msg => msg.status === status).length;
+// Toast State
+const toast = ref({ show: false, message: '', type: 'success' });
+const showMessage = (msg, type = 'success') => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => toast.value.show = false, 3000);
 };
+
+// --- API ACTIONS ---
+
+// 1. FETCH GUESTBOOK (READ)
+const { data: apiResponse, isLoading, refetch, isRefetching } = useQuery({
+  queryKey: ['guestbook', page],
+  queryFn: async () => {
+    const res = await api(`/guestbook?page=${page.value}&limit=${limit}`);
+    return res;
+  },
+  placeholderData: keepPreviousData,
+  staleTime: 0
+});
+
+// Computed Data
+const messages = computed(() => {
+  const raw = apiResponse.value;
+  let dataToMap = [];
+
+  if (raw) {
+    if (Array.isArray(raw)) dataToMap = raw;
+    else if (raw.data && Array.isArray(raw.data)) dataToMap = raw.data;
+    else if (raw.data?.data && Array.isArray(raw.data.data)) dataToMap = raw.data.data;
+  }
+
+  return dataToMap.map(item => ({
+    id: item.id,
+    message: item.message,
+    createdAt: item.created_at,
+    // Default true jika field is_visible belum ada di API
+    isVisible: item.is_visible !== undefined ? item.is_visible : true,
+    visitor: {
+      name: item.visitors?.name || 'Anonymous',
+      avatar: item.visitors?.avatar_url || '',
+      initial: item.visitors?.initial || '?'
+    }
+  }));
+});
+
+// Computed Pagination Meta
+const meta = computed(() => {
+  const raw = apiResponse.value;
+  const pag = raw?.pagination || raw?.data?.pagination || {};
+  return {
+    current_page: pag.current_page || 1,
+    total_pages: pag.total_pages || 1,
+    total_items: pag.total_data || 0
+  };
+});
+
+const nextPage = () => { if (page.value < meta.value.total_pages) page.value++; };
+const prevPage = () => { if (page.value > 1) page.value--; };
+
+// 2. TOGGLE VISIBILITY (UPDATE) - BARU
+const toggleMutation = useMutation({
+  mutationFn: async ({ id, currentStatus }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Login dulu bang.");
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    // Kirim kebalikan dari status sekarang (!currentStatus)
+    const res = await fetch(`${API_URL}/api/v1/guestbook/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ is_visible: !currentStatus })
+    });
+
+    if (!res.ok) throw new Error("Gagal update status.");
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    showMessage("Status visibility berhasil diubah!", 'success');
+  },
+  onError: (e) => showMessage(e.message, 'error')
+});
+
+// 3. DELETE MESSAGE
+const deleteMutation = useMutation({
+  mutationFn: async (id) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Login dulu bang.");
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const res = await fetch(`${API_URL}/api/v1/guestbook/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+
+    if (!res.ok) throw new Error("Gagal menghapus pesan.");
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    showMessage("Pesan dihapus!", 'success');
+    closeDeleteModal();
+  },
+  onError: (e) => showMessage(e.message, 'error')
+});
 
 // --- HELPER ---
-const formatDateRelative = (dateString) => {
-  if (!dateString) return '';
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
   const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now - date) / 1000);
-
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 172800) return 'Yesterday';
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'NEW': return 'bg-blue-100 text-blue-700';
-    case 'APPROVED': return 'bg-green-100 text-green-700';
-    case 'REJECTED': return 'bg-red-100 text-red-700';
-    default: return 'bg-gray-100 text-gray-700';
-  }
-};
-
-const getBorderColor = (status) => {
-  switch (status) {
-    case 'NEW': return 'border-l-blue-500';
-    case 'APPROVED': return 'border-l-green-500';
-    case 'REJECTED': return 'border-l-red-500';
-    default: return 'border-l-gray-300';
-  }
-};
-
-const getInitial = (name) => name ? name.charAt(0).toUpperCase() : '?';
-
-// --- ACTIONS ---
-
-// 1. Update Status
-const updateStatus = (id, newStatus) => {
-  isSubmitting.value = true;
-  // TODO: Integrasi API PUT Status
-  setTimeout(() => {
-    // Simulasi update lokal
-    if (messages.value) {
-      const index = messages.value.findIndex(m => m.id === id);
-      if (index !== -1) {
-        messages.value[index].status = newStatus;
-      }
-    }
-    isSubmitting.value = false;
-  }, 500);
-};
-
-// 2. Logic Delete Modal (BARU)
+// --- MODAL & ACTION LOGIC ---
 const confirmDelete = (item) => {
   itemToDelete.value = item;
   isDeleteModalOpen.value = true;
 };
-
 const closeDeleteModal = () => {
   isDeleteModalOpen.value = false;
   itemToDelete.value = null;
 };
 
-const deleteMessage = () => {
-  if (!itemToDelete.value) return;
-
-  isSubmitting.value = true;
-
-  // TODO: Integrasi API DELETE
-  setTimeout(() => {
-    // Simulasi hapus lokal (karena messages readonly dari useQuery, idealnya pakai queryClient)
-    // Disini kita hanya refresh data untuk simulasi
-    isSubmitting.value = false;
-    closeDeleteModal();
-    refetch();
-  }, 500);
-};
-
-const refreshData = () => {
-  isSubmitting.value = true;
-  refetch().finally(() => {
-    isSubmitting.value = false;
-  });
+const handleToggle = (item) => {
+  toggleMutation.mutate({ id: item.id, currentStatus: item.isVisible });
 };
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto space-y-8">
+  <div class="max-w-5xl mx-auto space-y-8 relative pb-20">
 
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
+      <div>
         <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Guestbook</h1>
-        <span
-          class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">Moderation</span>
+        <p class="text-slate-500 mt-1">Moderate messages from your visitors.</p>
       </div>
 
-      <button @click="refreshData" :disabled="isSubmitting || isLoading"
-        class="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-100 transition disabled:opacity-50">
-        <RefreshCw :size="16" :class="{ 'animate-spin': isSubmitting || isLoading }" />
-        <span>Refresh</span>
+      <button @click="refetch" :disabled="isLoading || isRefetching"
+        class="flex items-center gap-2 bg-white border border-gray-200 text-slate-600 px-4 py-2.5 rounded-xl hover:bg-gray-50 hover:text-[#FB923C] hover:border-[#FB923C] transition font-bold text-sm shadow-sm disabled:opacity-70">
+        <RefreshCw :size="16" :class="{ 'animate-spin': isLoading || isRefetching }" />
+        <span>Refresh Data</span>
       </button>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 w-fit">
-      <button v-for="tab in tabs" :key="tab" @click="filterStatus = tab"
-        class="px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2" :class="filterStatus === tab
-          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-          : 'text-gray-500 hover:bg-gray-50'">
-        {{ tab.charAt(0) + tab.slice(1).toLowerCase() }}
-        <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]"
-          :class="filterStatus !== tab ? 'bg-gray-200 text-gray-600' : ''">
-          {{ getCount(tab) }}
-        </span>
-      </button>
-    </div>
+    <div
+      class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
 
-    <div class="space-y-4">
-
-      <div v-if="isLoading" class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
-        <Loader2 :size="40" class="animate-spin text-indigo-500 mb-2" />
-        <p>Loading messages...</p>
+      <div v-if="isLoading" class="p-12 text-center flex justify-center">
+        <Loader2 class="animate-spin text-[#FB923C]" :size="40" />
       </div>
 
-      <div v-else-if="isError" class="p-12 text-center flex flex-col items-center justify-center text-red-400">
-        <AlertCircle :size="40" class="mb-2" />
-        <p>Failed to load messages.</p>
-      </div>
-
-      <div v-else-if="filteredMessages.length === 0"
-        class="p-12 text-center flex flex-col items-center justify-center text-slate-400">
+      <div v-else-if="!messages || messages.length === 0"
+        class="p-12 text-center text-slate-400 flex flex-col items-center">
         <MessageSquare :size="48" class="mb-4 opacity-50" />
-        <p>No messages found in {{ filterStatus.toLowerCase() }} folder.</p>
+        <p>No messages found.</p>
       </div>
 
-      <div v-else v-for="msg in filteredMessages" :key="msg.id"
-        class="bg-white p-6 rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-l-4 border-gray-100 group transition hover:shadow-lg"
-        :class="getBorderColor(msg.status)">
-        <div class="flex justify-between items-start mb-4">
-          <div class="flex gap-4">
-            <div
-              class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden"
-              :class="{
-                'bg-blue-50 text-blue-600': msg.status === 'NEW',
-                'bg-green-50 text-green-600': msg.status === 'APPROVED',
-                'bg-red-50 text-red-600': msg.status === 'REJECTED',
-                'bg-gray-100 text-gray-600': !msg.status
-              }">
-              <img v-if="msg.visitors?.avatar_url" :src="msg.visitors.avatar_url" class="w-full h-full object-cover" />
-              <span v-else>{{ getInitial(msg.visitors?.name || 'A') }}</span>
-            </div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 font-bold bg-gray-50/50">
+              <th class="px-8 py-5">Visitor</th>
+              <th class="px-6 py-5 w-1/2">Message</th>
+              <th class="px-6 py-5 whitespace-nowrap">Date</th>
+              <th class="px-8 py-5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr v-for="item in messages" :key="item.id" class="group transition duration-200"
+              :class="item.isVisible ? 'hover:bg-orange-50/30' : 'bg-gray-50 opacity-75 hover:opacity-100'">
 
-            <div>
-              <h3 class="font-bold text-slate-800 text-lg">{{ msg.visitors?.name || 'Anonymous' }}</h3>
-              <a v-if="msg.visitors?.email" :href="`mailto:${msg.visitors.email}`"
-                class="text-sm text-gray-400 hover:text-indigo-600 transition flex items-center gap-1">
-                {{ msg.visitors.email }}
-              </a>
-            </div>
-          </div>
+              <td class="px-8 py-5 align-top">
+                <div class="flex gap-4 items-center">
+                  <div
+                    class="w-10 h-10 rounded-full flex-shrink-0 bg-gray-200 overflow-hidden border border-white shadow-sm flex items-center justify-center text-gray-500 font-bold text-sm">
+                    <img v-if="item.visitor.avatar" :src="item.visitor.avatar" class="w-full h-full object-cover" />
+                    <span v-else>{{ item.visitor.initial }}</span>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-slate-800 text-sm">{{ item.visitor.name }}</h3>
+                    <span v-if="!item.isVisible"
+                      class="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-bold uppercase ml-2 md:hidden">Hidden</span>
+                  </div>
+                </div>
+              </td>
 
-          <div class="text-right">
-            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
-              :class="getStatusColor(msg.status)">
-              {{ msg.status || 'UNKNOWN' }}
-            </span>
-            <p class="text-xs text-gray-400 mt-1 font-medium flex items-center justify-end gap-1">
-              <Clock :size="12" /> {{ formatDateRelative(msg.created_at) }}
-            </p>
-          </div>
-        </div>
+              <td class="px-6 py-5 align-top">
+                <div class="relative">
+                  <p class="text-slate-600 text-sm leading-relaxed whitespace-pre-line"
+                    :class="{ 'line-through text-slate-400': !item.isVisible }">
+                    {{ item.message }}
+                  </p>
+                  <span v-if="!item.isVisible" class="text-[10px] font-bold text-slate-400 mt-1 block">(Pesan
+                    disembunyikan dari publik)</span>
+                </div>
+              </td>
 
-        <p class="text-slate-600 leading-relaxed mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100 italic">
-          "{{ msg.message }}"
-        </p>
+              <td class="px-6 py-5 align-top whitespace-nowrap">
+                <span class="text-xs font-bold text-slate-400 bg-gray-100 px-2 py-1 rounded-md">
+                  {{ formatDate(item.createdAt) }}
+                </span>
+              </td>
 
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-50">
+              <td class="px-8 py-5 align-top text-right">
+                <div class="flex items-center justify-end gap-2">
 
-          <button @click="confirmDelete(msg)" :disabled="isSubmitting"
-            class="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition font-bold text-sm disabled:opacity-50">
-            <Trash2 :size="16" />
-            <span>Delete</span>
+                  <button @click="handleToggle(item)" class="p-2 rounded-xl transition"
+                    :class="item.isVisible ? 'text-green-500 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'"
+                    :title="item.isVisible ? 'Hide Message' : 'Show Message'">
+                    <component :is="item.isVisible ? Eye : EyeOff" :size="18" />
+                  </button>
+
+                  <button @click="confirmDelete(item)"
+                    class="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                    title="Delete Message">
+                    <Trash2 :size="18" />
+                  </button>
+
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="meta.total_pages > 1"
+        class="border-t border-gray-100 px-8 py-4 bg-gray-50/30 flex items-center justify-between">
+        <span class="text-xs text-slate-500 font-medium">
+          Page <b>{{ meta.current_page }}</b> of <b>{{ meta.total_pages }}</b> ({{ meta.total_items }} messages)
+        </span>
+        <div class="flex items-center gap-2">
+          <button @click="prevPage" :disabled="page === 1"
+            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold">
+            <ChevronLeft :size="14" /> Prev
           </button>
-
-          <button v-if="msg.status !== 'REJECTED'" @click="updateStatus(msg.id, 'REJECTED')" :disabled="isSubmitting"
-            class="flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition font-bold text-sm border border-gray-200 disabled:opacity-50">
-            <XCircle :size="16" />
-            <span>Reject</span>
+          <button @click="nextPage" :disabled="page >= meta.total_pages"
+            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold">
+            Next
+            <ChevronRight :size="14" />
           </button>
-
-          <button v-if="msg.status !== 'APPROVED'" @click="updateStatus(msg.id, 'APPROVED')" :disabled="isSubmitting"
-            class="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition font-bold text-sm shadow-md shadow-indigo-100 disabled:opacity-50">
-            <CheckCircle :size="16" />
-            <span>Approve</span>
-          </button>
-
-          <button v-if="msg.status === 'APPROVED'" @click="updateStatus(msg.id, 'NEW')" :disabled="isSubmitting"
-            class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl transition font-bold text-sm disabled:opacity-50">
-            <span>Set to New</span>
-          </button>
-
         </div>
       </div>
+
     </div>
 
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-
           <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal">
           </div>
-
           <div
             class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
-
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
               <AlertTriangle class="h-8 w-8 text-red-500" />
             </div>
-
             <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Message?</h3>
             <p class="text-slate-500 text-sm mb-8">
-              Are you sure you want to delete this message from <strong class="text-slate-700">{{
-                itemToDelete?.visitors?.name || 'Anonymous' }}</strong>?
-              This action cannot be undone.
+              Are you sure you want to delete message from <strong class="text-slate-700">{{ itemToDelete?.visitor?.name
+                }}</strong>?
             </p>
-
             <div class="grid grid-cols-2 gap-3">
               <button @click="closeDeleteModal"
-                class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">
-                Cancel
-              </button>
-
-              <button @click="deleteMessage" :disabled="isSubmitting"
-                class="flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-200 disabled:opacity-70 disabled:cursor-not-allowed">
-                <Loader2 v-if="isSubmitting" class="animate-spin" :size="20" />
+                class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">Cancel</button>
+              <button @click="deleteMutation.mutate(itemToDelete.id)" :disabled="deleteMutation.isPending.value"
+                class="flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-200 disabled:opacity-70">
+                <Loader2 v-if="deleteMutation.isPending.value" class="animate-spin" :size="20" />
                 <span v-else>Yes, Delete</span>
               </button>
             </div>
-
           </div>
         </div>
       </Transition>
     </Teleport>
+
+    <Transition name="fade">
+      <div v-if="toast.show"
+        class="fixed bottom-6 right-6 z-50 bg-white border border-gray-100 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+        <div :class="toast.type === 'success' ? 'text-green-500' : 'text-red-500'">
+          <component :is="toast.type === 'success' ? CheckCircle : XCircle" :size="24" />
+        </div>
+        <div>
+          <h4 class="font-bold text-sm" :class="toast.type === 'success' ? 'text-green-700' : 'text-red-700'">
+            {{ toast.type === 'success' ? 'Success!' : 'Error!' }}
+          </h4>
+          <p class="text-xs text-slate-500">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Transition>
 
   </div>
 </template>
