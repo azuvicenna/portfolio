@@ -5,34 +5,13 @@ import MainLayout from "@/layout/MainLayout.vue";
 import AdminLayout from "@/layout/AdminLayout.vue";
 import BlogDetailLayout from "@/layout/BlogDetailLayout.vue";
 
-import LoginView from "@/views/auth/LoginView.vue";
-
-import AboutView from "@/views/public/AboutView.vue";
-import ExperienceView from "@/views/public/ExperienceView.vue";
-import EducationView from "@/views/public/EducationView.vue";
-import SkillView from "@/views/public/SkillView.vue";
-import ProjectView from "@/views/public/ProjectView.vue";
-import ProjectDetailView from "@/views/public/ProjectDetailView.vue";
-import BlogView from "@/views/public/BlogView.vue";
-import BlogDetailView from "@/views/public/BlogDetailView.vue";
-import Guestbook from "@/views/public/Guestbook.vue";
-
-import AdminDashboardView from "@/views/admin/AdminDashboardView.vue";
-import AdminAboutView from "@/views/admin/AdminAboutView.vue";
-import AdminExperienceView from "@/views/admin/AdminExperienceView.vue";
-import AdminEducationView from "@/views/admin/AdminEducationView.vue";
-import AdminSkillView from "@/views/admin/AdminSkillView.vue";
-import AdminProjectView from "@/views/admin/AdminProjectView.vue";
-import AdminBlogView from "@/views/admin/AdminBlogView.vue";
-import AdminGuestbookView from "@/views/admin/AdminGuestbookView.vue";
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL || "/"),
   routes: [
     {
       path: "/login",
       name: "login",
-      component: LoginView,
+      component: () => import("@/views/auth/LoginView.vue"),
       meta: {
         title: "Login",
       },
@@ -44,7 +23,7 @@ const router = createRouter({
         {
           path: "",
           name: "about",
-          component: AboutView,
+          component: () => import("@/views/public/AboutView.vue"),
           meta: {
             title: "About",
             header: "About",
@@ -53,7 +32,7 @@ const router = createRouter({
         {
           path: "experiences",
           name: "experiences",
-          component: ExperienceView,
+          component: () => import("@/views/public/ExperienceView.vue"),
           meta: {
             title: "Experiences",
             header: "Experiences",
@@ -62,7 +41,7 @@ const router = createRouter({
         {
           path: "educations",
           name: "educations",
-          component: EducationView,
+          component: () => import("@/views/public/EducationView.vue"),
           meta: {
             title: "Educations",
             header: "Educations",
@@ -71,7 +50,7 @@ const router = createRouter({
         {
           path: "skills",
           name: "skills",
-          component: SkillView,
+          component: () => import("@/views/public/SkillView.vue"),
           meta: {
             title: "Skills",
             header: "Skills",
@@ -80,7 +59,7 @@ const router = createRouter({
         {
           path: "projects",
           name: "projects",
-          component: ProjectView,
+          component: () => import("@/views/public/ProjectView.vue"),
           meta: {
             title: "Projects",
             header: "Projects",
@@ -89,7 +68,7 @@ const router = createRouter({
         {
           path: "blogs",
           name: "blogs",
-          component: BlogView,
+          component: () => import("@/views/public/BlogView.vue"),
           meta: {
             title: "Blogs",
             header: "Blogs",
@@ -98,7 +77,7 @@ const router = createRouter({
         {
           path: "guestbook",
           name: "guestbook",
-          component: Guestbook,
+          component: () => import("@/views/public/Guestbook.vue"),
           meta: {
             title: "Guestbook",
             header: "Guestbook",
@@ -117,7 +96,7 @@ const router = createRouter({
         {
           path: "dashboard",
           name: "admin-dashboard",
-          component: AdminDashboardView,
+          component: () => import("@/views/admin/AdminDashboardView.vue"),
           meta: {
             title: "Dashboard",
           },
@@ -125,7 +104,7 @@ const router = createRouter({
         {
           path: "about",
           name: "admin-about",
-          component: AdminAboutView,
+          component: () => import("@/views/admin/AdminAboutView.vue"),
           meta: {
             title: "Edit Profile",
           },
@@ -133,7 +112,7 @@ const router = createRouter({
         {
           path: "experiences",
           name: "admin-experiences",
-          component: AdminExperienceView,
+          component: () => import("@/views/admin/AdminExperienceView.vue"),
           meta: {
             title: "Experiences",
           },
@@ -141,7 +120,7 @@ const router = createRouter({
         {
           path: "educations",
           name: "admin-educations",
-          component: AdminEducationView,
+          component: () => import("@/views/admin/AdminEducationView.vue"),
           meta: {
             title: "Educations",
           },
@@ -149,7 +128,7 @@ const router = createRouter({
         {
           path: "skills",
           name: "admin-skills",
-          component: AdminSkillView,
+          component: () => import("@/views/admin/AdminSkillView.vue"),
           meta: {
             title: "Skills",
           },
@@ -157,7 +136,7 @@ const router = createRouter({
         {
           path: "projects",
           name: "admin-projects",
-          component: AdminProjectView,
+          component: () => import("@/views/admin/AdminProjectView.vue"),
           meta: {
             title: "Projects",
           },
@@ -165,7 +144,7 @@ const router = createRouter({
         {
           path: "blogs",
           name: "admin-blogs",
-          component: AdminBlogView,
+          component: () => import("@/views/admin/AdminBlogView.vue"),
           meta: {
             title: "Blogs",
           },
@@ -173,7 +152,7 @@ const router = createRouter({
         {
           path: "guestbook",
           name: "admin-guestbook",
-          component: AdminGuestbookView,
+          component: () => import("@/views/admin/AdminGuestbookView.vue"),
           meta: { title: "Guestbook" },
         },
       ],
@@ -185,7 +164,7 @@ const router = createRouter({
         {
           path: "",
           name: "blog-detail",
-          component: BlogDetailView,
+          component: () => import("@/views/public/BlogDetailView.vue"),
           meta: { title: "Article" },
         },
       ],
@@ -197,7 +176,7 @@ const router = createRouter({
         {
           path: "",
           name: "project-detail",
-          component: ProjectDetailView,
+          component: () => import("@/views/public/ProjectDetailView.vue"),
           meta: { title: "Project Showcase" },
         },
       ],
@@ -212,9 +191,6 @@ router.beforeEach(async (to, from, next) => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // ---------------------------------------------------------
-  // KASUS A: User SUDAH Login tapi iseng buka halaman /login
-  // ---------------------------------------------------------
   if (to.path === "/login" && session) {
     const { data: userData } = await supabase
       .from("visitors")
@@ -229,16 +205,10 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // ---------------------------------------------------------
-  // KASUS B: Rute Wajib Login (requiresAuth)
-  // ---------------------------------------------------------
   if (to.meta.requiresAuth && !session) {
     return next("/login");
   }
 
-  // ---------------------------------------------------------
-  // KASUS C: Rute Khusus Admin (requiresAdmin)
-  // ---------------------------------------------------------
   if (to.meta.requiresAdmin) {
     const { data: userData, error } = await supabase
       .from("visitors")

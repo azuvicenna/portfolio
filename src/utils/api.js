@@ -1,4 +1,4 @@
-const BASE_URL = "https://reeze-portfolio-api.up.railway.app/api/v1";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const api = async (endpoint) => {
   const res = await fetch(`${BASE_URL}${endpoint}`);
