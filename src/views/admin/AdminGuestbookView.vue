@@ -6,88 +6,73 @@ import { supabase } from '@/config/supabase';
 import {
   Trash2, MessageSquare, Loader2, AlertTriangle,
   CheckCircle, XCircle, RefreshCw, ChevronLeft, ChevronRight,
-  Eye, EyeOff // Import Icon Mata
+  Eye, EyeOff
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isDeleteModalOpen = ref(false);
 const itemToDelete = ref(null);
 
-// Pagination State
 const page = ref(1);
 const limit = 10;
 
-// Toast State
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// --- API ACTIONS ---
-
-// 1. FETCH GUESTBOOK (READ)
 const { data: apiResponse, isLoading, refetch, isRefetching } = useQuery({
-  queryKey: ['guestbook', page],
-  queryFn: async () => {
-    const res = await api(`/guestbook?page=${page.value}&limit=${limit}`);
-    return res;
-  },
+  queryKey: ['admin-guestbook'],
+  queryFn: () => api('/guestbook/admin/all'),
   placeholderData: keepPreviousData,
   staleTime: 0
 });
 
-// Computed Data
-const messages = computed(() => {
+const allMessages = computed(() => {
   const raw = apiResponse.value;
-  let dataToMap = [];
+  if (!raw) return [];
+  const data = raw.data || raw;
+  return Array.isArray(data) ? data : [];
+});
 
-  if (raw) {
-    if (Array.isArray(raw)) dataToMap = raw;
-    else if (raw.data && Array.isArray(raw.data)) dataToMap = raw.data;
-    else if (raw.data?.data && Array.isArray(raw.data.data)) dataToMap = raw.data.data;
-  }
+const messages = computed(() => {
+  const start = (page.value - 1) * limit;
+  const end = start + limit;
 
-  return dataToMap.map(item => ({
+  return allMessages.value.slice(start, end).map(item => ({
     id: item.id,
     message: item.message,
     createdAt: item.created_at,
-    // Default true jika field is_visible belum ada di API
     isVisible: item.is_visible !== undefined ? item.is_visible : true,
     visitor: {
       name: item.visitors?.name || 'Anonymous',
       avatar: item.visitors?.avatar_url || '',
-      initial: item.visitors?.initial || '?'
+      initial: (item.visitors?.name || '?').charAt(0).toUpperCase()
     }
   }));
 });
 
-// Computed Pagination Meta
 const meta = computed(() => {
-  const raw = apiResponse.value;
-  const pag = raw?.pagination || raw?.data?.pagination || {};
+  const total = allMessages.value.length;
   return {
-    current_page: pag.current_page || 1,
-    total_pages: pag.total_pages || 1,
-    total_items: pag.total_data || 0
+    current_page: page.value,
+    total_pages: Math.ceil(total / limit) || 1,
+    total_items: total
   };
 });
 
 const nextPage = () => { if (page.value < meta.value.total_pages) page.value++; };
 const prevPage = () => { if (page.value > 1) page.value--; };
 
-// 2. TOGGLE VISIBILITY (UPDATE) - BARU
 const toggleMutation = useMutation({
   mutationFn: async ({ id, currentStatus }) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-    // Kirim kebalikan dari status sekarang (!currentStatus)
-    const res = await fetch(`${API_URL}/api/v1/guestbook/${id}`, {
-      method: 'PUT',
+    const res = await fetch(`${API_URL}/api/v1/guestbook/${id}/visibility`, {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
@@ -99,17 +84,16 @@ const toggleMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-guestbook'] });
     showMessage("Status visibility berhasil diubah!", 'success');
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE MESSAGE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/guestbook/${id}`, {
@@ -121,21 +105,19 @@ const deleteMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['guestbook'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-guestbook'] });
     showMessage("Pesan dihapus!", 'success');
     closeDeleteModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- HELPER ---
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-// --- MODAL & ACTION LOGIC ---
 const confirmDelete = (item) => {
   itemToDelete.value = item;
   isDeleteModalOpen.value = true;
@@ -227,19 +209,16 @@ const handleToggle = (item) => {
 
               <td class="px-8 py-5 align-top text-right">
                 <div class="flex items-center justify-end gap-2">
-
                   <button @click="handleToggle(item)" class="p-2 rounded-xl transition"
                     :class="item.isVisible ? 'text-green-500 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'"
                     :title="item.isVisible ? 'Hide Message' : 'Show Message'">
                     <component :is="item.isVisible ? Eye : EyeOff" :size="18" />
                   </button>
-
                   <button @click="confirmDelete(item)"
                     class="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
                     title="Delete Message">
                     <Trash2 :size="18" />
                   </button>
-
                 </div>
               </td>
             </tr>
@@ -280,7 +259,7 @@ const handleToggle = (item) => {
             <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Message?</h3>
             <p class="text-slate-500 text-sm mb-8">
               Are you sure you want to delete message from <strong class="text-slate-700">{{ itemToDelete?.visitor?.name
-                }}</strong>?
+              }}</strong>?
             </p>
             <div class="grid grid-cols-2 gap-3">
               <button @click="closeDeleteModal"

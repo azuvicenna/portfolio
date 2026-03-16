@@ -9,22 +9,19 @@ import {
   AlertTriangle, MinusCircle, School
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const isDeleteModalOpen = ref(false);
 const itemToDelete = ref(null);
-const errors = ref({}); // Penampung Error
+const errors = ref({});
 
-// Toast State
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// Form State
 const form = ref({
   id: null,
   degree: '',
@@ -32,10 +29,9 @@ const form = ref({
   score: '',
   startDate: '',
   endDate: '',
-  description: [''] // Array untuk poin deskripsi
+  description: ['']
 });
 
-// --- ZOD SCHEMA ---
 const educationSchema = z.object({
   degree: z.string().min(1, "Gelar/Jurusan wajib diisi"),
   institution: z.string().min(1, "Nama Institusi wajib diisi"),
@@ -45,7 +41,6 @@ const educationSchema = z.object({
   description: z.array(z.string().min(1, "Poin deskripsi tidak boleh kosong")).min(1, "Minimal 1 deskripsi"),
 });
 
-// --- LIVE VALIDATION ---
 watch(form, (newVal) => {
   const result = educationSchema.safeParse(newVal);
   if (!result.success) {
@@ -57,46 +52,34 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- API ACTIONS ---
-
-// Helper buat memaksa format jadi YYYY-MM-DD (String)
 const formatToInputDate = (val) => {
   if (!val) return '';
   try {
-    // Kalau dia Number (timestamp) atau Date Object, konversi ke ISO
     return new Date(val).toISOString().split('T')[0];
   } catch (e) {
     return '';
   }
 };
 
-// 1. FETCH (READ)
 const { data: educations, isLoading } = useQuery({
   queryKey: ['educations'],
   queryFn: async () => {
     const res = await api('/educations');
-    // Mapping Data dari DB (snake_case) ke Frontend (camelCase)
     return res.map(e => ({
       id: e.id,
       degree: e.degree,
       institution: e.institution,
-      // Paksa Score jadi String
       score: e.score ? String(e.score) : '',
-
-      // FIX UTAMA DISINI: Konversi tanggal DB ke format YYYY-MM-DD string
       startDate: formatToInputDate(e.start_date || e.startDate),
       endDate: formatToInputDate(e.end_date || e.endDate),
-      // Pastikan description jadi array
       description: Array.isArray(e.description) ? e.description : (e.description ? [e.description] : [])
     }));
   },
   staleTime: 0
 });
 
-// 2. SAVE (CREATE/UPDATE)
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
-    // Validasi Akhir
     const validation = educationSchema.safeParse(formData);
     if (!validation.success) {
       const formatted = {};
@@ -106,9 +89,8 @@ const saveMutation = useMutation({
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
-    // Payload ke Backend (Mapping balik ke snake_case)
     const payload = {
       degree: formData.degree,
       institution: formData.institution,
@@ -144,11 +126,10 @@ const saveMutation = useMutation({
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/educations/${id}`, {
@@ -167,14 +148,12 @@ const deleteMutation = useMutation({
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- HELPER ---
 const formatDate = (dateString) => {
   if (!dateString) return 'Present';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 };
 
-// --- FORM LOGIC ---
 const openCreateModal = () => {
   isEditing.value = false;
   errors.value = {};
@@ -197,7 +176,6 @@ const openEditModal = (item) => {
 
 const closeModal = () => isModalOpen.value = false;
 
-// Array Handlers
 const addDescription = () => form.value.description.push('');
 const removeDescription = (index) => {
   if (form.value.description.length > 1) {

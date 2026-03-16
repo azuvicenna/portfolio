@@ -12,21 +12,20 @@ import {
   CheckCircle, XCircle
 } from 'lucide-vue-next';
 
-// --- STATE ---
 const queryClient = useQueryClient();
 const fileInput = ref(null);
 const textareaRef = ref(null);
 const errors = ref({});
 const isPreview = ref(false);
 
-// State untuk Custom Message/Toast
 const toast = ref({
   show: false,
   message: '',
-  type: 'success' // 'success' | 'error'
+  type: 'success'
 });
 
 const form = ref({
+  id: '',
   full_name: '',
   headline: '',
   email: '',
@@ -36,17 +35,15 @@ const form = ref({
   github_url: '',
 });
 
-// --- HELPER: SHOW TOAST ---
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
-  // Hilang otomatis setelah 3 detik
   setTimeout(() => {
     toast.value.show = false;
   }, 3000);
 };
 
-// --- VALIDASI ZOD ---
 const profileSchema = z.object({
+  id: z.string().optional(),
   full_name: z.string().min(1, "Nama lengkap wajib diisi"),
   headline: z.string().min(3, "Headline minimal 3 karakter"),
   bio: z.string().min(10, "Bio terlalu pendek (minimal 10 karakter)"),
@@ -55,7 +52,6 @@ const profileSchema = z.object({
   github_url: z.string().url("URL GitHub tidak valid").optional().or(z.literal('')),
 });
 
-// Live Validation
 watch(form, (newVal) => {
   const result = profileSchema.safeParse(newVal);
   if (!result.success) {
@@ -67,16 +63,16 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- FETCH DATA ---
 const { data: profileData, isLoading } = useQuery({
   queryKey: ['profile'],
-  queryFn: () => api('/about'),
+  queryFn: () => api('/about/active'),
   staleTime: 0,
 });
 
 watch(profileData, (newData) => {
   if (newData) {
     form.value = {
+      id: newData.id || '',
       full_name: newData.full_name || '',
       headline: newData.headline || '',
       email: newData.email || '',
@@ -88,7 +84,6 @@ watch(profileData, (newData) => {
   }
 }, { immediate: true });
 
-// --- MARKDOWN LOGIC ---
 const insertMarkdown = (type) => {
   const textarea = textareaRef.value;
   if (!textarea) return;
@@ -116,36 +111,28 @@ const insertMarkdown = (type) => {
   });
 };
 
-// --- ACTION: UPLOAD FOTO (REAL) ---
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 1. Validasi Ukuran (Max 2MB)
   if (file.size > 2 * 1024 * 1024) {
     showMessage("Ukuran file terlalu besar! Maksimal 2MB.", 'error');
     return;
   }
 
   try {
-    // Tampilkan loading di tombol save (hack dikit biar user nunggu)
-    // Atau bisa bikin state loading khusus upload
-    const originalAvatar = form.value.avatar_url;
-    form.value.avatar_url = "https://via.placeholder.com/150?text=Uploading..."; // Placeholder visual
+    form.value.avatar_url = "https://via.placeholder.com/150?text=Uploading...";
 
     const fileExt = file.name.split('.').pop();
     const fileName = `avatar-${Date.now()}.${fileExt}`;
     const filePath = `avatars/${fileName}`;
 
-    // 2. Upload ke Supabase Storage
-    // Pastikan bucket 'images' sudah dibuat & PUBLIC di Supabase
     const { error: uploadError } = await supabase.storage
       .from('images')
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
-    // 3. Ambil URL
     const { data } = supabase.storage
       .from('images')
       .getPublicUrl(filePath);
@@ -154,7 +141,6 @@ const handleFileUpload = async (event) => {
     showMessage("Foto berhasil diupload! Jangan lupa klik Save.", 'success');
 
   } catch (error) {
-    console.error(error);
     showMessage("Gagal upload foto: " + error.message, 'error');
   }
 };
@@ -163,7 +149,6 @@ const triggerFileInput = () => {
   fileInput.value.click();
 };
 
-// --- ACTION: SAVE DATA ---
 const saveMutation = useMutation({
   mutationFn: async (newData) => {
     const validation = profileSchema.safeParse(newData);
@@ -175,8 +160,14 @@ const saveMutation = useMutation({
     if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const res = await fetch(`${API_URL}/api/v1/about`, {
-      method: 'PUT',
+
+    const url = newData.id
+      ? `${API_URL}/api/v1/about/${newData.id}`
+      : `${API_URL}/api/v1/about`;
+    const method = newData.id ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
@@ -189,7 +180,6 @@ const saveMutation = useMutation({
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['profile'] });
-    queryClient.invalidateQueries({ queryKey: ['about'] });
     showMessage("Profil berhasil diperbarui!", 'success');
   },
   onError: (err) => {
@@ -372,7 +362,8 @@ const saveMutation = useMutation({
                 </div>
                 <input v-model="form.github_url" type="url"
                   class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-r-xl outline-none transition text-slate-800 focus:bg-white focus:ring-2 focus:border-transparent custom-focus"
-                  :class="{ 'border-red-500 bg-red-50': errors.github_url }" placeholder="https://github.com/username" />
+                  :class="{ 'border-red-500 bg-red-50': errors.github_url }"
+                  placeholder="https://github.com/username" />
               </div>
               <span v-if="errors.github_url" class="text-xs text-red-500 font-medium">{{ errors.github_url }}</span>
             </div>
@@ -410,7 +401,6 @@ const saveMutation = useMutation({
   border-color: #FB923C;
 }
 
-/* Toast Transition */
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -422,7 +412,6 @@ const saveMutation = useMutation({
   transform: translateY(20px) scale(0.95);
 }
 
-/* Markdown Preview Styles */
 :deep(.prose) h2 {
   font-size: 1.25rem;
   font-weight: 700;

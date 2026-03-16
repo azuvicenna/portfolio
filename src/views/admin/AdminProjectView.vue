@@ -6,12 +6,11 @@ import { supabase } from '@/config/supabase';
 import { z } from 'zod';
 import { marked } from 'marked';
 import {
-  Plus, Pencil, Trash2, X, Star, Monitor, Loader2, 
-  AlertTriangle, CheckCircle, XCircle, Eye, EyeOff, 
+  Plus, Pencil, Trash2, X, Star, Monitor, Loader2,
+  AlertTriangle, CheckCircle, XCircle, Eye, EyeOff,
   Bold, Italic, Link, Underline, ChevronLeft, ChevronRight
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -21,18 +20,16 @@ const errors = ref({});
 const isPreview = ref(false);
 
 const page = ref(1);
-const limit = 6; 
+const limit = 6;
 
 const categories = ['Web Development', 'Mobile App', 'Backend API', 'UI/UX Design', 'DevOps', 'Fullstack', 'Tools/CLI', 'Legacy'];
 
-// Toast
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// Form State
 const form = ref({
   id: null,
   title: '',
@@ -47,7 +44,6 @@ const form = ref({
   isFeatured: false
 });
 
-// Zod Schema
 const projectSchema = z.object({
   title: z.string().min(1, "Judul wajib diisi"),
   slug: z.string().min(1, "Slug wajib diisi"),
@@ -60,7 +56,6 @@ const projectSchema = z.object({
   repoUrl: z.string().url("URL Repo tidak valid").optional().or(z.literal('')),
 });
 
-// Watcher
 watch(form, (newVal) => {
   if (!isEditing.value && newVal.title) {
     form.value.slug = newVal.title.toString().toLowerCase().trim()
@@ -78,51 +73,32 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- API ACTIONS ---
-
-// 1. FETCH (READ)
 const { data: apiResponse, isLoading } = useQuery({
-  queryKey: ['projects', page], 
-  queryFn: async () => {
-    const res = await api(`/projects?page=${page.value}&limit=${limit}`);
-    return res; 
-  },
-  placeholderData: keepPreviousData, 
-  staleTime: 0 
+  queryKey: ['admin-projects'],
+  queryFn: () => api('/projects/admin/all'),
+  placeholderData: keepPreviousData,
+  staleTime: 0
 });
 
-// --- FIX UTAMA: ROBUST MAPPING ---
-// Kita buat logika pencari array yang pintar
-const projects = computed(() => {
+const allProjects = computed(() => {
   const raw = apiResponse.value;
-  
-  // 1. Cari Array Data di berbagai kemungkinan tempat
-  let dataToMap = [];
-  
-  if (raw) {
-    if (Array.isArray(raw)) {
-        // Kasus A: API langsung return Array [...]
-        dataToMap = raw;
-    } else if (raw.data && Array.isArray(raw.data)) {
-        // Kasus B: Standar JSON { success: true, data: [...] } (Paling mungkin)
-        dataToMap = raw.data;
-    } else if (raw.data?.data && Array.isArray(raw.data.data)) {
-        // Kasus C: Axios wrapper { data: { data: [...] } }
-        dataToMap = raw.data.data;
-    }
-  }
+  if (!raw) return [];
+  const data = raw.data || raw;
+  return Array.isArray(data) ? data : [];
+});
 
-  // 2. Lakukan Mapping dengan aman
-  return dataToMap.map(item => ({
+const projects = computed(() => {
+  const start = (page.value - 1) * limit;
+  const end = start + limit;
+
+  return allProjects.value.slice(start, end).map(item => ({
     id: item.id,
     title: item.title,
     slug: item.slug,
     category: item.category,
     summary: item.summary,
     content: item.content,
-    // Mapping: Prioritaskan image_url dari DB
-    imageUrl: item.image_url || item.imageUrl || '', 
-    // Tools: Pastikan array
+    imageUrl: item.image_url || item.imageUrl || '',
     tools: Array.isArray(item.tools) ? item.tools : [],
     demoUrl: item.demo_url || item.demoUrl || '',
     repoUrl: item.repo_url || item.repoUrl || '',
@@ -130,30 +106,25 @@ const projects = computed(() => {
   }));
 });
 
-// Meta Pagination
 const meta = computed(() => {
-  const raw = apiResponse.value;
-  // Cari object pagination (biasanya di root level response)
-  const pag = raw?.pagination || raw?.data?.pagination || {};
-  
-  return { 
-    current_page: pag.current_page || 1, 
-    total_pages: pag.total_pages || 1, 
-    total_items: pag.total_data || 0
+  const total = allProjects.value.length;
+  return {
+    current_page: page.value,
+    total_pages: Math.ceil(total / limit) || 1,
+    total_items: total
   };
 });
 
 const nextPage = () => { if (page.value < meta.value.total_pages) page.value++; };
 const prevPage = () => { if (page.value > 1) page.value--; };
 
-// 2. SAVE
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
     const validation = projectSchema.safeParse(formData);
     if (!validation.success) throw new Error("Mohon perbaiki input yang merah.");
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const toolsArray = formData.tools.split(',').map(t => t.trim()).filter(t => t !== '');
 
@@ -189,18 +160,17 @@ const saveMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
     showMessage(isEditing.value ? "Project diperbarui!" : "Project ditambahkan!");
     closeModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/projects/${id}`, {
@@ -212,14 +182,13 @@ const deleteMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
     showMessage("Project dihapus!", 'success');
     closeDeleteModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// Markdown & Form Logic
 const textareaRef = ref(null);
 const insertMarkdown = (type) => {
   if (!textareaRef.value) return;
@@ -232,7 +201,7 @@ const insertMarkdown = (type) => {
   switch (type) {
     case 'bold': replacement = `**${selection || 'text'}**`; break;
     case 'italic': replacement = `*${selection || 'text'}*`; break;
-    case 'underline': replacement = `<u>${selection || 'text'}</u>`; break; 
+    case 'underline': replacement = `<u>${selection || 'text'}</u>`; break;
     case 'link': replacement = `[${selection || 'Link'}](https://)`; break;
   }
 
@@ -247,9 +216,9 @@ const insertMarkdown = (type) => {
 const openCreateModal = () => {
   isEditing.value = false;
   errors.value = {};
-  form.value = { 
-    id: null, title: '', slug: '', category: categories[0], summary: '', content: '', imageUrl: '', 
-    tools: '', demoUrl: '', repoUrl: '', isFeatured: false 
+  form.value = {
+    id: null, title: '', slug: '', category: categories[0], summary: '', content: '', imageUrl: '',
+    tools: '', demoUrl: '', repoUrl: '', isFeatured: false
   };
   isModalOpen.value = true;
 };

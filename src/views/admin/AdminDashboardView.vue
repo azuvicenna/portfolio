@@ -9,10 +9,10 @@ import {
   Eye, Briefcase, MessageSquare, Activity,
   Plus, Pencil, Trash2, X, Loader2,
   User, Mail, Link as LinkIcon, AlertTriangle,
-  Bold, Italic, Underline, Link, EyeOff, Type, Upload, Camera
+  Bold, Italic, Underline, Link, EyeOff, Type, Upload, Camera,
+  CheckCircle, XCircle
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
@@ -20,16 +20,20 @@ const isEditing = ref(false);
 const itemToDelete = ref(null);
 const errors = ref({});
 
-// State Editor Markdown
 const textareaRef = ref(null);
 const isPreview = ref(false);
 
-// State Upload Avatar
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
 const fileInputRef = ref(null);
 
-// Stats Dummy
+const toast = ref({ show: false, message: '', type: 'success' });
+
+const showMessage = (msg, type = 'success') => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => toast.value.show = false, 3000);
+};
+
 const stats = [
   { title: 'Total Views', value: '2,543', label: '+12%', icon: Eye, color: 'text-orange-600', bg: 'bg-orange-50', hover: 'group-hover:bg-orange-600' },
   { title: 'Projects', value: '12', label: 'Active', icon: Briefcase, color: 'text-amber-600', bg: 'bg-amber-50', hover: 'group-hover:bg-amber-600' },
@@ -37,7 +41,6 @@ const stats = [
   { title: 'System Status', value: 'Good', label: 'Stable', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50', hover: 'group-hover:bg-emerald-600' },
 ];
 
-// --- FORM STATE ---
 const form = ref({
   id: null,
   full_name: '',
@@ -45,23 +48,20 @@ const form = ref({
   email: '',
   linkedin_url: '',
   github_url: '',
-  avatar_url: '', // Nanti diisi otomatis setelah upload
+  avatar_url: '',
   bio: ''
 });
 
-// --- ZOD SCHEMA ---
 const aboutSchema = z.object({
   full_name: z.string().min(1, "Nama lengkap wajib diisi"),
   headline: z.string().min(1, "Headline wajib diisi"),
   email: z.string().email("Format email tidak valid").optional().or(z.literal('')),
   linkedin_url: z.string().url("URL LinkedIn tidak valid").optional().or(z.literal('')),
   github_url: z.string().url("URL GitHub tidak valid").optional().or(z.literal('')),
-  // Avatar URL boleh kosong string (karena bisa jadi belum upload)
   avatar_url: z.string().optional(),
   bio: z.string().optional()
 });
 
-// Watcher Validation
 watch(form, (newVal) => {
   const result = aboutSchema.safeParse(newVal);
   if (!result.success) {
@@ -73,9 +73,6 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- API ACTIONS ---
-
-// 1. FETCH ALL PROFILES
 const { data: aboutList, isLoading } = useQuery({
   queryKey: ['about-list'],
   queryFn: async () => {
@@ -85,16 +82,13 @@ const { data: aboutList, isLoading } = useQuery({
   staleTime: 0,
 });
 
-// --- UPLOAD LOGIC ---
 const handleFileChange = (event) => {
   const file = event.target.files[0];
   if (file) {
-    // Validasi ukuran (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ukuran file terlalu besar! Maksimal 2MB.");
+      showMessage("Ukuran file terlalu besar! Maksimal 2MB.", 'error');
       return;
     }
-    // Set file & preview
     avatarFile.value = file;
     avatarPreview.value = URL.createObjectURL(file);
   }
@@ -104,10 +98,8 @@ const triggerFileInput = () => {
   fileInputRef.value.click();
 };
 
-// 2. SAVE (UPLOAD -> CREATE / UPDATE)
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
-    // Validasi Zod Dasar
     const validation = aboutSchema.safeParse(formData);
     if (!validation.success) {
       const formatted = {};
@@ -117,24 +109,21 @@ const saveMutation = useMutation({
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
-    // --- LOGIC UPLOAD GAMBAR KE SUPABASE ---
     let finalAvatarUrl = formData.avatar_url;
 
     if (avatarFile.value) {
       const fileExt = avatarFile.value.name.split('.').pop();
       const fileName = `avatar-${Date.now()}.${fileExt}`;
-      const filePath = `profiles/${fileName}`; // Folder 'profiles' di bucket
+      const filePath = `profiles/${fileName}`;
 
-      // 1. Upload ke Bucket 'images' (Ganti nama bucket jika beda)
       const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, avatarFile.value);
 
       if (uploadError) throw new Error("Gagal upload gambar: " + uploadError.message);
 
-      // 2. Ambil Public URL
       const { data: publicUrlData } = supabase.storage
         .from('images')
         .getPublicUrl(filePath);
@@ -142,10 +131,8 @@ const saveMutation = useMutation({
       finalAvatarUrl = publicUrlData.publicUrl;
     }
 
-    // Update form data dengan URL baru
     const payload = { ...formData, avatar_url: finalAvatarUrl };
 
-    // --- SIMPAN KE DATABASE ---
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     let url = `${API_URL}/api/v1/about`;
     let method = 'POST';
@@ -169,16 +156,16 @@ const saveMutation = useMutation({
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['about-list'] });
+    showMessage(isEditing.value ? "Profil berhasil diperbarui!" : "Profil berhasil ditambahkan!");
     closeModal();
   },
-  onError: (e) => alert(e.message)
+  onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/about/${id}`, {
@@ -191,12 +178,12 @@ const deleteMutation = useMutation({
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['about-list'] });
+    showMessage("Profil berhasil dihapus!");
     closeDeleteModal();
   },
-  onError: (e) => alert(e.message)
+  onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- MARKDOWN LOGIC ---
 const insertMarkdown = (type) => {
   const textarea = textareaRef.value;
   if (!textarea) return;
@@ -220,13 +207,12 @@ const insertMarkdown = (type) => {
   });
 };
 
-// --- MODAL LOGIC ---
 const openCreateModal = () => {
   isEditing.value = false;
   isPreview.value = false;
   errors.value = {};
-  avatarFile.value = null; // Reset file
-  avatarPreview.value = null; // Reset preview
+  avatarFile.value = null;
+  avatarPreview.value = null;
   form.value = { id: null, full_name: '', headline: '', email: '', linkedin_url: '', github_url: '', avatar_url: '', bio: '' };
   isModalOpen.value = true;
 };
@@ -235,8 +221,8 @@ const openEditModal = (item) => {
   isEditing.value = true;
   isPreview.value = false;
   errors.value = {};
-  avatarFile.value = null; // Reset file
-  avatarPreview.value = null; // Reset preview
+  avatarFile.value = null;
+  avatarPreview.value = null;
   form.value = { ...item };
   isModalOpen.value = true;
 };
@@ -520,6 +506,21 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
         </div>
       </Transition>
     </Teleport>
+
+    <Transition name="fade">
+      <div v-if="toast.show"
+        class="fixed bottom-6 right-6 z-50 bg-white border border-gray-100 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+        <div :class="toast.type === 'success' ? 'text-green-500' : 'text-red-500'">
+          <component :is="toast.type === 'success' ? CheckCircle : XCircle" :size="24" />
+        </div>
+        <div>
+          <h4 class="font-bold text-sm" :class="toast.type === 'success' ? 'text-green-700' : 'text-red-700'">
+            {{ toast.type === 'success' ? 'Success!' : 'Error!' }}
+          </h4>
+          <p class="text-xs text-slate-500">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Transition>
 
   </div>
 </template>

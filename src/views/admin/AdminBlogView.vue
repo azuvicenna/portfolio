@@ -6,12 +6,11 @@ import { supabase } from '@/config/supabase';
 import { z } from 'zod';
 import { marked } from 'marked';
 import {
-  Plus, Pencil, Trash2, X, BookOpen, Loader2, AlertTriangle, 
+  Plus, Pencil, Trash2, X, BookOpen, Loader2, AlertTriangle,
   Image as ImageIcon, CheckCircle, XCircle, Eye, EyeOff,
   Bold, Italic, Link, Underline, ChevronLeft, ChevronRight
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -20,18 +19,15 @@ const itemToDelete = ref(null);
 const errors = ref({});
 const isPreview = ref(false);
 
-// --- PAGINATION STATE ---
 const page = ref(1);
-const limit = 6; // Sesuai 'per_page' di JSON
+const limit = 6;
 
-// State Toast
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// Form State
 const form = ref({
   id: null,
   title: '',
@@ -39,25 +35,22 @@ const form = ref({
   summary: '',
   content: '',
   language: 'ID',
-  publishedAt: '', // Format YYYY-MM-DD string
+  publishedAt: '',
   coverImage: '',
-  tags: '' // Comma separated string
+  tags: ''
 });
 
-// --- ZOD SCHEMA ---
 const blogSchema = z.object({
   title: z.string().min(1, "Judul wajib diisi"),
   slug: z.string().min(1, "Slug wajib diisi"),
   summary: z.string().min(1, "Ringkasan wajib diisi"),
   content: z.string().min(10, "Konten minimal 10 karakter"),
   language: z.enum(['ID', 'EN']),
-  // Tanggal opsional, tapi kalau diisi harus valid string
-  publishedAt: z.string().optional().or(z.literal('')), 
+  publishedAt: z.string().optional().or(z.literal('')),
   coverImage: z.string().url("URL Gambar tidak valid").optional().or(z.literal('')),
   tags: z.string().optional()
 });
 
-// Watcher Validation & Slug
 watch(form, (newVal) => {
   if (!isEditing.value && newVal.title) {
     form.value.slug = newVal.title.toString().toLowerCase().trim()
@@ -75,8 +68,6 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- HELPER DATE ---
-// Mengubah "Dec 6, 2025" atau ISO string menjadi "2025-12-06" untuk input date
 const formatToInputDate = (val) => {
   if (!val) return '';
   const date = new Date(val);
@@ -84,68 +75,58 @@ const formatToInputDate = (val) => {
   return date.toISOString().split('T')[0];
 };
 
-// --- API ACTIONS ---
-
-// 1. FETCH (READ)
 const { data: apiResponse, isLoading } = useQuery({
-  queryKey: ['blogs', page],
-  queryFn: async () => {
-    const res = await api(`/blogs?page=${page.value}&limit=${limit}`);
-    return res;
-  },
+  queryKey: ['admin-blogs'],
+  queryFn: () => api(`/blogs/admin/all`),
   placeholderData: keepPreviousData,
   staleTime: 0
 });
 
-// Computed Data & Meta
-const blogs = computed(() => {
+const allBlogs = computed(() => {
   const raw = apiResponse.value;
-  let dataToMap = [];
+  if (!raw) return [];
+  const data = raw.data || raw;
+  return Array.isArray(data) ? data : [];
+});
 
-  // Logic Robust untuk mencari array data
-  if (raw) {
-    if (Array.isArray(raw)) dataToMap = raw;
-    else if (raw.data && Array.isArray(raw.data)) dataToMap = raw.data;
-    else if (raw.data?.data && Array.isArray(raw.data.data)) dataToMap = raw.data.data;
-  }
+const blogs = computed(() => {
+  const start = (page.value - 1) * limit;
+  const end = start + limit;
 
-  return dataToMap.map(item => ({
+  return allBlogs.value.slice(start, end).map(item => ({
     id: item.id,
     title: item.title,
     slug: item.slug,
     summary: item.summary,
-    content: item.content || '', // Handle jika API list tidak kirim content
+    content: item.content || '',
     language: item.language || 'ID',
-    // Mapping snake_case -> camelCase
     coverImage: item.cover_image || item.coverImage || '',
-    publishedAt: item.published_at || item.publishedAt || null, 
+    publishedAt: item.published_at || item.publishedAt || null,
     tags: Array.isArray(item.tags) ? item.tags : [],
-    views: item.views || 0
+    views: item.views || 0,
+    isPublished: item.is_published || false
   }));
 });
 
 const meta = computed(() => {
-  const raw = apiResponse.value;
-  const pag = raw?.pagination || raw?.data?.pagination || {};
-  return { 
-    current_page: pag.current_page || 1, 
-    total_pages: pag.total_pages || 1, 
-    total_items: pag.total_data || 0 // Sesuai JSON Anda: total_data
+  const total = allBlogs.value.length;
+  return {
+    current_page: page.value,
+    total_pages: Math.ceil(total / limit) || 1,
+    total_items: total
   };
 });
 
-// Pagination Controls
 const nextPage = () => { if (page.value < meta.value.total_pages) page.value++; };
 const prevPage = () => { if (page.value > 1) page.value--; };
 
-// 2. SAVE
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
     const validation = blogSchema.safeParse(formData);
     if (!validation.success) throw new Error("Mohon perbaiki input yang merah.");
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t !== '');
 
@@ -155,22 +136,18 @@ const saveMutation = useMutation({
       summary: formData.summary,
       content: formData.content,
       language: formData.language,
-      published_at: formData.publishedAt || null, // Snake case ke DB
+      published_at: formData.publishedAt || null,
+      is_published: !!formData.publishedAt,
       cover_image: formData.coverImage,
       tags: tagsArray
     };
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    let url = `${API_URL}/api/v1/blogs`;
-    let method = 'POST';
-
-    if (isEditing.value) {
-      url = `${API_URL}/api/v1/blogs/${formData.id}`;
-      method = 'PUT';
-    }
+    const url = isEditing.value ? `${API_URL}/api/v1/blogs/${formData.id}` : `${API_URL}/api/v1/blogs`;
+    const method = isEditing.value ? 'PUT' : 'POST';
 
     const res = await fetch(url, {
-      method: method,
+      method,
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
       body: JSON.stringify(payload)
     });
@@ -179,18 +156,17 @@ const saveMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['blogs'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-blogs'] });
     showMessage(isEditing.value ? "Artikel diperbarui!" : "Artikel diterbitkan!");
     closeModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/blogs/${id}`, {
@@ -202,14 +178,13 @@ const deleteMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['blogs'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-blogs'] });
     showMessage("Artikel dihapus!", 'success');
     closeDeleteModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- MARKDOWN & FORM LOGIC ---
 const textareaRef = ref(null);
 const insertMarkdown = (type) => {
   if (!textareaRef.value) return;
@@ -250,9 +225,7 @@ const openEditModal = (item) => {
   errors.value = {};
   form.value = {
     ...item,
-    // Format tanggal agar masuk ke input date
     publishedAt: formatToInputDate(item.publishedAt),
-    // Join tags array jadi string
     tags: Array.isArray(item.tags) ? item.tags.join(', ') : item.tags
   };
   isModalOpen.value = true;
@@ -279,8 +252,9 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
       </button>
     </div>
 
-    <div class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
-      
+    <div
+      class="bg-white rounded-[2rem] shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
+
       <div v-if="isLoading" class="p-12 text-center flex justify-center">
         <Loader2 class="animate-spin text-[#FB923C]" :size="40" />
       </div>
@@ -318,19 +292,20 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
               <td class="px-6 py-5">
                 <div class="space-y-1">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
-                    :class="item.publishedAt ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-500 border-gray-200'">
-                    {{ item.publishedAt ? 'Published' : 'Draft' }}
+                    :class="item.isPublished ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-500 border-gray-200'">
+                    {{ item.isPublished ? 'Published' : 'Draft' }}
                   </span>
                   <p v-if="item.publishedAt" class="text-xs text-gray-400 font-medium">{{ item.publishedAt }}</p>
                 </div>
               </td>
               <td class="px-6 py-5">
                 <div class="flex flex-wrap gap-1 max-w-[200px]">
-                  <span v-for="tag in item.tags.slice(0,3)" :key="tag"
+                  <span v-for="tag in item.tags.slice(0, 3)" :key="tag"
                     class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase tracking-wide border border-gray-200">
                     {{ tag }}
                   </span>
-                  <span v-if="item.tags.length > 3" class="text-[10px] text-gray-400 self-center">+{{ item.tags.length - 3 }}</span>
+                  <span v-if="item.tags.length > 3" class="text-[10px] text-gray-400 self-center">+{{ item.tags.length -
+                    3 }}</span>
                 </div>
               </td>
               <td class="px-8 py-5 text-right">
@@ -350,22 +325,20 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
         </table>
       </div>
 
-      <div v-if="meta.total_pages > 1" class="border-t border-gray-100 px-8 py-4 bg-gray-50/30 flex items-center justify-between">
+      <div v-if="meta.total_pages > 1"
+        class="border-t border-gray-100 px-8 py-4 bg-gray-50/30 flex items-center justify-between">
         <span class="text-xs text-slate-500 font-medium">
           Showing page <b>{{ meta.current_page }}</b> of <b>{{ meta.total_pages }}</b> ({{ meta.total_items }} articles)
         </span>
         <div class="flex items-center gap-2">
-          <button 
-            @click="prevPage" :disabled="page === 1"
-            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold"
-          >
+          <button @click="prevPage" :disabled="page === 1"
+            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold">
             <ChevronLeft :size="14" /> Prev
           </button>
-          <button 
-            @click="nextPage" :disabled="page >= meta.total_pages"
-            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold"
-          >
-            Next <ChevronRight :size="14" />
+          <button @click="nextPage" :disabled="page >= meta.total_pages"
+            class="p-2 rounded-lg border border-gray-200 bg-white text-slate-600 hover:bg-[#FB923C] hover:text-white hover:border-[#FB923C] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs font-bold">
+            Next
+            <ChevronRight :size="14" />
           </button>
         </div>
       </div>
@@ -378,11 +351,13 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
           <div class="flex min-h-full items-center justify-center p-4 text-center">
             <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
 
-            <div class="relative z-10 w-full max-w-6xl h-[90vh] flex flex-col transform rounded-[2rem] bg-white p-8 text-left shadow-2xl transition-all border border-gray-100 my-8">
+            <div
+              class="relative z-10 w-full max-w-6xl h-[90vh] flex flex-col transform rounded-[2rem] bg-white p-8 text-left shadow-2xl transition-all border border-gray-100 my-8">
 
               <div class="flex items-center justify-between mb-6 flex-shrink-0">
                 <div>
-                  <h2 class="text-2xl font-bold text-slate-800">{{ isEditing ? 'Edit Article' : 'Write New Article' }}</h2>
+                  <h2 class="text-2xl font-bold text-slate-800">{{ isEditing ? 'Edit Article' : 'Write New Article' }}
+                  </h2>
                   <p class="text-slate-400 text-sm">Share your knowledge.</p>
                 </div>
                 <button @click="closeModal"
@@ -391,9 +366,10 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
                 </button>
               </div>
 
-              <form @submit.prevent="saveMutation.mutate(form)" class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 overflow-hidden">
+              <form @submit.prevent="saveMutation.mutate(form)"
+                class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 overflow-hidden">
                 <div class="md:col-span-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar border-r border-gray-100">
-                  
+
                   <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">Settings</label>
                     <div class="space-y-3">
@@ -416,17 +392,18 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
 
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cover Image</label>
-                    <div class="aspect-video bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 border border-dashed border-gray-300 overflow-hidden relative group">
+                    <div
+                      class="aspect-video bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 border border-dashed border-gray-300 overflow-hidden relative group">
                       <img v-if="form.coverImage" :src="form.coverImage" class="w-full h-full object-cover"
-                        alt="Cover Preview" @error="$event.target.style.display='none'" />
+                        alt="Cover Preview" @error="$event.target.style.display = 'none'" />
                       <div v-else class="flex flex-col items-center gap-2">
                         <ImageIcon :size="24" />
                         <span class="text-xs">Preview</span>
                       </div>
                     </div>
                     <input v-model="form.coverImage" type="url" placeholder="https://..."
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 text-sm custom-focus" 
-                      :class="{'border-red-500': errors.coverImage}" />
+                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 text-sm custom-focus"
+                      :class="{ 'border-red-500': errors.coverImage }" />
                     <span v-if="errors.coverImage" class="text-xs text-red-500">{{ errors.coverImage }}</span>
                   </div>
 
@@ -443,17 +420,17 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Title</label>
                     <input v-model="form.title" type="text"
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 font-bold text-lg custom-focus"
-                      :class="{'border-red-500': errors.title}" />
+                      :class="{ 'border-red-500': errors.title }" />
                     <span v-if="errors.title" class="text-xs text-red-500">{{ errors.title }}</span>
                   </div>
-                  
+
                   <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Slug</label>
                     <div class="relative">
                       <span class="absolute left-4 top-3.5 text-gray-400 text-sm">/blog/</span>
                       <input v-model="form.slug" type="text"
                         class="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 custom-focus"
-                        :class="{'border-red-500': errors.slug}" />
+                        :class="{ 'border-red-500': errors.slug }" />
                     </div>
                     <span v-if="errors.slug" class="text-xs text-red-500">{{ errors.slug }}</span>
                   </div>
@@ -462,21 +439,35 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Summary</label>
                     <textarea v-model="form.summary" rows="2"
                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 resize-none custom-focus"
-                      :class="{'border-red-500': errors.summary}"></textarea>
+                      :class="{ 'border-red-500': errors.summary }"></textarea>
                     <span v-if="errors.summary" class="text-xs text-red-500">{{ errors.summary }}</span>
                   </div>
 
                   <div class="space-y-2 flex-1 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center">
-                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Content (Markdown)</label>
+                      <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Content
+                        (Markdown)</label>
                       <div class="flex gap-2">
-                        <button type="button" @click="insertMarkdown('bold')" class="p-1 hover:bg-gray-100 rounded" title="Bold"><Bold :size="14"/></button>
-                        <button type="button" @click="insertMarkdown('italic')" class="p-1 hover:bg-gray-100 rounded" title="Italic"><Italic :size="14"/></button>
-                        <button type="button" @click="insertMarkdown('underline')" class="p-1 hover:bg-gray-100 rounded" title="Underline"><Underline :size="14"/></button>
-                        <button type="button" @click="insertMarkdown('link')" class="p-1 hover:bg-gray-100 rounded" title="Link"><Link :size="14"/></button>
+                        <button type="button" @click="insertMarkdown('bold')" class="p-1 hover:bg-gray-100 rounded"
+                          title="Bold">
+                          <Bold :size="14" />
+                        </button>
+                        <button type="button" @click="insertMarkdown('italic')" class="p-1 hover:bg-gray-100 rounded"
+                          title="Italic">
+                          <Italic :size="14" />
+                        </button>
+                        <button type="button" @click="insertMarkdown('underline')" class="p-1 hover:bg-gray-100 rounded"
+                          title="Underline">
+                          <Underline :size="14" />
+                        </button>
+                        <button type="button" @click="insertMarkdown('link')" class="p-1 hover:bg-gray-100 rounded"
+                          title="Link">
+                          <Link :size="14" />
+                        </button>
                         <div class="w-px h-4 bg-gray-300 mx-1"></div>
-                        <button type="button" @click="isPreview = !isPreview" class="flex items-center gap-1 text-xs font-bold text-[#FB923C]">
-                          <component :is="isPreview ? EyeOff : Eye" :size="14"/> {{ isPreview ? 'Edit' : 'Preview' }}
+                        <button type="button" @click="isPreview = !isPreview"
+                          class="flex items-center gap-1 text-xs font-bold text-[#FB923C]">
+                          <component :is="isPreview ? EyeOff : Eye" :size="14" /> {{ isPreview ? 'Edit' : 'Preview' }}
                         </button>
                       </div>
                     </div>
@@ -484,11 +475,12 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
                     <div v-if="!isPreview" class="flex-1">
                       <textarea ref="textareaRef" v-model="form.content"
                         class="w-full h-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none text-slate-800 font-mono text-sm leading-relaxed resize-none custom-focus"
-                        :class="{'border-red-500': errors.content}"></textarea>
+                        :class="{ 'border-red-500': errors.content }"></textarea>
                     </div>
-                    <div v-else class="flex-1 w-full px-4 py-3 bg-white border border-gray-200 rounded-xl prose prose-sm max-w-none overflow-y-auto"
-                         v-html="marked.parse(form.content || '')"></div>
-                    
+                    <div v-else
+                      class="flex-1 w-full px-4 py-3 bg-white border border-gray-200 rounded-xl prose prose-sm max-w-none overflow-y-auto"
+                      v-html="marked.parse(form.content || '')"></div>
+
                     <span v-if="errors.content" class="text-xs text-red-500">{{ errors.content }}</span>
                   </div>
 
@@ -513,13 +505,16 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal"></div>
-          <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
+          <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="closeDeleteModal">
+          </div>
+          <div
+            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center transform transition-all border border-gray-100">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 mb-6">
               <AlertTriangle class="h-8 w-8 text-red-500" />
             </div>
             <h3 class="text-xl font-bold text-slate-800 mb-2">Delete Article?</h3>
-            <p class="text-slate-500 text-sm mb-8">Are you sure you want to delete <strong class="text-slate-700">"{{ itemToDelete?.title }}"</strong>?</p>
+            <p class="text-slate-500 text-sm mb-8">Are you sure you want to delete <strong class="text-slate-700">"{{
+              itemToDelete?.title }}"</strong>?</p>
             <div class="grid grid-cols-2 gap-3">
               <button @click="closeDeleteModal"
                 class="py-3 rounded-xl text-slate-600 font-bold hover:bg-gray-50 transition border border-gray-200">Cancel</button>
@@ -535,7 +530,8 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
     </Teleport>
 
     <Transition name="fade">
-      <div v-if="toast.show" class="fixed bottom-6 right-6 z-50 bg-white border border-gray-100 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+      <div v-if="toast.show"
+        class="fixed bottom-6 right-6 z-50 bg-white border border-gray-100 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
         <div :class="toast.type === 'success' ? 'text-green-500' : 'text-red-500'">
           <component :is="toast.type === 'success' ? CheckCircle : XCircle" :size="24" />
         </div>
@@ -557,9 +553,27 @@ const closeDeleteModal = () => { isDeleteModalOpen.value = false; itemToDelete.v
   --tw-ring-color: #FB923C;
   --tw-ring-opacity: 0.2;
 }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 20px; }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0;
+  border-radius: 20px;
+}
 </style>

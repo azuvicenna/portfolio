@@ -8,7 +8,6 @@ import {
   Plus, Pencil, Trash2, X, Wrench, Loader2, AlertTriangle, CheckCircle, XCircle
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -18,14 +17,12 @@ const errors = ref({});
 
 const categories = ['Languages', 'Frameworks', 'Databases', 'Tools', 'Cloud', 'DevOps', 'Frontend', 'Backend'];
 
-// State Toast
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// Form State
 const form = ref({
   id: null,
   name: '',
@@ -34,7 +31,6 @@ const form = ref({
   logoUrl: ''
 });
 
-// --- ZOD SCHEMA ---
 const skillSchema = z.object({
   name: z.string().min(1, "Nama skill wajib diisi"),
   category: z.string().min(1, "Kategori wajib dipilih"),
@@ -42,7 +38,6 @@ const skillSchema = z.object({
   logoUrl: z.string().url("URL Logo tidak valid").optional().or(z.literal(''))
 });
 
-// --- LIVE VALIDATION ---
 watch(form, (newVal) => {
   const result = skillSchema.safeParse(newVal);
   if (!result.success) {
@@ -54,30 +49,23 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- API ACTIONS ---
-
-// 1. FETCH (READ) - KEMBALI KE FLAT ARRAY (Lebih Simpel)
 const { data: skills, isLoading } = useQuery({
-  queryKey: ['skills'],
+  queryKey: ['admin-skills'],
   queryFn: async () => {
-    const res = await api('/skills'); // Pastikan endpoint ini return array biasa
-
-    // Support dua format response: Array langsung [...] atau Object { data: [...] }
+    const res = await api('/skills/admin/all');
     const rawData = Array.isArray(res) ? res : (res.data || []);
 
     return rawData.map(item => ({
       id: item.id,
       name: item.name,
       category: item.category,
-      // Mapping Snake_case (DB) -> CamelCase (Frontend)
       displayOrder: item.display_order || item.displayOrder || 0,
       logoUrl: item.logo_url || item.logoUrl || ''
-    })).sort((a, b) => a.displayOrder - b.displayOrder); // Urutkan berdasarkan order
+    }));
   },
   staleTime: 0
 });
 
-// 2. SAVE (CREATE/UPDATE)
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
     const validation = skillSchema.safeParse(formData);
@@ -89,12 +77,12 @@ const saveMutation = useMutation({
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const payload = {
       name: formData.name,
       category: formData.category,
-      display_order: formData.displayOrder, // Kirim snake_case ke DB
+      display_order: formData.displayOrder,
       logo_url: formData.logoUrl
     };
 
@@ -117,18 +105,17 @@ const saveMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['skills'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-skills'] });
     showMessage(isEditing.value ? "Skill diperbarui!" : "Skill ditambahkan!");
     closeModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/skills/${id}`, {
@@ -140,20 +127,19 @@ const deleteMutation = useMutation({
     return res.json();
   },
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['skills'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-skills'] });
     showMessage("Skill dihapus!", 'success');
     closeDeleteModal();
   },
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- HELPER UI ---
 const getCategoryColor = (category) => {
   switch (category) {
     case 'Languages': return 'bg-blue-50 text-blue-600 border-blue-100';
     case 'Frontend': return 'bg-sky-50 text-sky-600 border-sky-100';
     case 'Backend': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
-    case 'Database': return 'bg-purple-50 text-purple-600 border-purple-100';
+    case 'Databases': return 'bg-purple-50 text-purple-600 border-purple-100';
     case 'Tools': return 'bg-orange-50 text-orange-600 border-orange-100';
     case 'DevOps': return 'bg-slate-50 text-slate-600 border-slate-100';
     case 'Cloud': return 'bg-cyan-50 text-cyan-600 border-cyan-100';
@@ -161,12 +147,10 @@ const getCategoryColor = (category) => {
   }
 };
 
-// --- FORM LOGIC ---
 const openCreateModal = () => {
   isEditing.value = false;
   errors.value = {};
 
-  // Auto increment order suggestion
   const nextOrder = skills.value && skills.value.length > 0
     ? Math.max(...skills.value.map(s => s.displayOrder)) + 1
     : 1;

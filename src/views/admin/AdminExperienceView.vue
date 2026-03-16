@@ -9,7 +9,6 @@ import {
   Loader2, AlertTriangle, MinusCircle
 } from 'lucide-vue-next';
 
-// --- SETUP ---
 const queryClient = useQueryClient();
 const isModalOpen = ref(false);
 const isEditing = ref(false);
@@ -17,14 +16,12 @@ const isDeleteModalOpen = ref(false);
 const itemToDelete = ref(null);
 const errors = ref({});
 
-// Toast
 const toast = ref({ show: false, message: '', type: 'success' });
 const showMessage = (msg, type = 'success') => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => toast.value.show = false, 3000);
 };
 
-// Form State
 const form = ref({
   id: null,
   position: '',
@@ -35,7 +32,6 @@ const form = ref({
   description: ['']
 });
 
-// --- ZOD SCHEMA ---
 const experienceSchema = z.object({
   position: z.string().min(1, "Posisi wajib diisi"),
   company: z.string().min(1, "Nama perusahaan wajib diisi"),
@@ -45,7 +41,6 @@ const experienceSchema = z.object({
   description: z.array(z.string().min(1, "Poin deskripsi tidak boleh kosong")).min(1, "Minimal 1 deskripsi"),
 });
 
-// Watcher Live Validation
 watch(form, (newVal) => {
   const result = experienceSchema.safeParse(newVal);
   if (!result.success) {
@@ -57,13 +52,10 @@ watch(form, (newVal) => {
   }
 }, { deep: true });
 
-// --- HELPER DATE ---
-// Fungsi ini mengubah apapun format dari DB menjadi YYYY-MM-DD
 const formatToInputDate = (val) => {
   if (!val) return '';
   try {
     const date = new Date(val);
-    // Pastikan valid date sebelum di-ISO-kan
     if (isNaN(date.getTime())) return '';
     return date.toISOString().split('T')[0];
   } catch (e) {
@@ -77,9 +69,6 @@ const formatDateDisplay = (dateString) => {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 };
 
-// --- API ACTIONS ---
-
-// 1. FETCH
 const { data: experiences, isLoading } = useQuery({
   queryKey: ['experiences'],
   queryFn: async () => {
@@ -88,14 +77,9 @@ const { data: experiences, isLoading } = useQuery({
       id: e.id,
       position: e.position,
       company: e.company,
-
-      // FIX 1: Handle NULL location agar tidak error di Zod
       location: e.location || '',
-
-      // FIX 2: Format Tanggal agar terbaca di Input Date (YYYY-MM-DD)
       startDate: formatToInputDate(e.start_date || e.startDate),
       endDate: formatToInputDate(e.end_date || e.endDate),
-
       description: Array.isArray(e.description)
         ? e.description
         : (e.description ? [e.description] : [])
@@ -104,7 +88,6 @@ const { data: experiences, isLoading } = useQuery({
   staleTime: 0
 });
 
-// 2. SAVE
 const saveMutation = useMutation({
   mutationFn: async (formData) => {
     const validation = experienceSchema.safeParse(formData);
@@ -116,13 +99,13 @@ const saveMutation = useMutation({
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const payload = {
       position: formData.position,
       company: formData.company,
       location: formData.location,
-      start_date: formData.startDate, // Kirim snake_case ke DB
+      start_date: formData.startDate,
       end_date: formData.endDate || null,
       description: formData.description
     };
@@ -153,11 +136,10 @@ const saveMutation = useMutation({
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// 3. DELETE
 const deleteMutation = useMutation({
   mutationFn: async (id) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("Login dulu bang.");
+    if (!session) throw new Error("Sesi habis, login ulang.");
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const res = await fetch(`${API_URL}/api/v1/experiences/${id}`, {
@@ -176,7 +158,6 @@ const deleteMutation = useMutation({
   onError: (e) => showMessage(e.message, 'error')
 });
 
-// --- FORM LOGIC ---
 const openCreateModal = () => {
   isEditing.value = false;
   errors.value = {};
@@ -192,7 +173,6 @@ const openEditModal = (item) => {
   errors.value = {};
   form.value = {
     ...item,
-    // Description harus dicopy array-nya biar gak reaktif langsung
     description: item.description && item.description.length > 0 ? [...item.description] : ['']
   };
   isModalOpen.value = true;
