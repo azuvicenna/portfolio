@@ -2,9 +2,12 @@
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 
-const { data: profile } = useQuery({
-    queryKey: ['about'],
-    queryFn: () => api('/about'),
+const { data: profile, isLoading, isError } = useQuery({
+    queryKey: ['about-active'],
+    queryFn: async () => {
+        const res = await api('/about/active');
+        return res.data || res;
+    },
     staleTime: 1000 * 60 * 60,
 });
 </script>
