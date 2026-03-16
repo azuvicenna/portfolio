@@ -5,7 +5,10 @@ import { Loader2, AlertCircle } from 'lucide-vue-next';
 
 const { data: experiences, isLoading, isError } = useQuery({
     queryKey: ['experiences'],
-    queryFn: () => api('/experiences'),
+    queryFn: async () => {
+        const res = await api('/experiences');
+        return res.data || res;
+    },
     staleTime: 1000 * 60 * 5,
 });
 </script>

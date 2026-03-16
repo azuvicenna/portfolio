@@ -1,12 +1,14 @@
 <script setup>
-import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 import { Loader2, AlertCircle } from 'lucide-vue-next';
 
 const { data: skills, isLoading, isError } = useQuery({
     queryKey: ['skills'],
-    queryFn: () => api('/skills'),
+    queryFn: async () => {
+        const res = await api('/skills');
+        return res.data || res;
+    },
     staleTime: 1000 * 60 * 60,
 });
 </script>

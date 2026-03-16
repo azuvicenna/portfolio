@@ -2,11 +2,14 @@
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 import { Loader2, AlertCircle } from 'lucide-vue-next';
-import { marked } from 'marked'; 
+import { marked } from 'marked';
 
 const { data: profile, isLoading, isError } = useQuery({
-    queryKey: ['about'],
-    queryFn: () => api('/about'),
+    queryKey: ['about-active'],
+    queryFn: async () => {
+        const res = await api('/about/active');
+        return res.data || res;
+    },
     staleTime: 1000 * 60 * 60,
 });
 </script>
@@ -18,9 +21,9 @@ const { data: profile, isLoading, isError } = useQuery({
             <Loader2 class="animate-spin" :size="32" color="#FB923C" />
         </div>
 
-        <div v-else-if="isError" class="loading-container">
+        <div v-else-if="isError || !profile" class="loading-container">
             <AlertCircle :size="32" class="text-red-500 mb-2" />
-            <p>Gagal memuat data.</p>
+            <p>Gagal memuat data profil.</p>
         </div>
 
         <div v-else>
@@ -36,7 +39,6 @@ const { data: profile, isLoading, isError } = useQuery({
 </template>
 
 <style scoped>
-/* STYLE ASLI ANDA (TETAP SAMA) */
 .loading-container {
     display: flex;
     flex-direction: column;
@@ -81,7 +83,6 @@ const { data: profile, isLoading, isError } = useQuery({
     text-transform: uppercase;
 }
 
-/* Style :deep() ini akan otomatis bekerja pada hasil render marked */
 .bio-content :deep(p) {
     font-size: 14px;
     line-height: 1.8;

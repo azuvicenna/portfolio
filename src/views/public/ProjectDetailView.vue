@@ -18,7 +18,10 @@ const slug = route.params.slug;
 
 const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ['project', slug],
-    queryFn: () => api(`/projects/${slug}`),
+    queryFn: async () => {
+        const res = await api(`/projects/${slug}`);
+        return res.data || res;
+    },
     retry: 1
 });
 

@@ -1,24 +1,31 @@
 <script setup>
-import { watch } from 'vue';
+import { watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQuery } from '@tanstack/vue-query';
 import { api } from '@/utils/api';
 import { marked } from 'marked';
-import { Loader2, AlertTriangle, FileX } from 'lucide-vue-next';
+import { Loader2, AlertTriangle } from 'lucide-vue-next';
 
 const route = useRoute();
 const slug = route.params.slug;
 
-const { data: blog, isLoading, isError, error } = useQuery({
+const { data: blog, isLoading, isError } = useQuery({
     queryKey: ['blog', slug],
-    queryFn: () => api(`/blogs/${slug}`),
+    queryFn: async () => {
+        const res = await api(`/blogs/${slug}`);
+        return res.data || res;
+    },
     retry: 1
 });
 
-watch(blog, (blog) => {
-    if (blog && blog.title) {
-        document.title = `${blog.title} - My Portfolio`;
+watch(blog, (newBlog) => {
+    if (newBlog?.title) {
+        document.title = `${newBlog.title} - My Portfolio`;
     }
+});
+
+onMounted(() => {
+    window.scrollTo(0, 0);
 });
 </script>
 

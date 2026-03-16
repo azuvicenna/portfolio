@@ -11,15 +11,12 @@ const selectedCategory = ref('All');
 const categories = ['All', 'Web Development', 'Mobile Development', 'Machine Learning', 'Backend', 'Tools'];
 
 const { data: apiResponse, isLoading, isError } = useQuery({
-
     queryKey: ['projects', page, selectedCategory],
-
     queryFn: () => {
         const params = new URLSearchParams({
             page: page.value,
             limit: limit
         });
-
 
         if (selectedCategory.value !== 'All') {
             params.append('category', selectedCategory.value);
@@ -27,20 +24,29 @@ const { data: apiResponse, isLoading, isError } = useQuery({
 
         return apiWithMeta(`/projects?${params.toString()}`);
     },
-
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
 });
 
-const projects = computed(() => apiResponse.value?.data || []);
-const meta = computed(() => apiResponse.value?.pagination || { total_pages: 1 });
+const projects = computed(() => {
+    const res = apiResponse.value;
+    if (Array.isArray(res)) return res;
+    if (res?.data && Array.isArray(res.data)) return res.data;
+    if (res?.data?.data && Array.isArray(res.data.data)) return res.data.data;
+    return [];
+});
+
+const meta = computed(() => {
+    const res = apiResponse.value;
+    return res?.pagination || res?.data?.pagination || { total_pages: 1 };
+});
 
 watch(selectedCategory, () => {
     page.value = 1;
 });
 
 const nextPage = () => {
-    if (page.value < meta.value.total_pages) {
+    if (meta.value && page.value < meta.value.total_pages) {
         page.value++;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }

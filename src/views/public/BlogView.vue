@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { useQuery, keepPreviousData } from '@tanstack/vue-query';
 import { apiWithMeta } from '@/utils/api';
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
-import { RouterLink } from 'vue-router';
 
 const page = ref(1);
 const limit = 6;

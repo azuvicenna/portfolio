@@ -4,15 +4,18 @@ import { api } from '@/utils/api';
 import { Loader2, AlertCircle } from 'lucide-vue-next';
 
 const { data: educations, isLoading, isError } = useQuery({
-    queryKey: ['educations'], 
-    queryFn: () => api('/educations'), 
-    staleTime: 1000 * 60 * 60, 
+    queryKey: ['educations'],
+    queryFn: async () => {
+        const res = await api('/educations');
+        return res.data || res;
+    },
+    staleTime: 1000 * 60 * 60,
 });
 </script>
 
 <template>
     <div class="education-list">
-        
+
         <div v-if="isLoading" class="state-container">
             <Loader2 class="animate-spin" :size="32" color="#FB923C" />
             <p>Loading education history...</p>
@@ -24,18 +27,14 @@ const { data: educations, isLoading, isError } = useQuery({
         </div>
 
         <div v-else>
-            <div 
-                v-for="item in educations" 
-                :key="item.id" 
-                class="education-item"
-            >
+            <div v-for="item in educations" :key="item.id" class="education-item">
                 <h3>{{ item.degree }}</h3>
-                
+
                 <div class="education-meta">
                     <span class="institution">
                         {{ item.institution }}<span v-if="item.location">, {{ item.location }}</span>
                     </span>
-                    
+
                     <span class="date">
                         {{ item.duration_string }}
                     </span>
@@ -108,12 +107,19 @@ const { data: educations, isLoading, isError } = useQuery({
     color: var(--text-gray);
     font-size: 14px;
 }
+
 .animate-spin {
     animation: spin 1s linear infinite;
     margin-bottom: 10px;
 }
+
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

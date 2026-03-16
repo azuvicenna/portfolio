@@ -17,7 +17,7 @@ const form = ref({
 
 onMounted(async () => {
     const { data } = await supabase.auth.getUser();
-    user.value = data.user;
+    user.value = data?.user || null;
 
     supabase.auth.onAuthStateChange((_event, session) => {
         user.value = session?.user || null;
@@ -59,7 +59,7 @@ const postMutation = useMutation({
             body: JSON.stringify(newMessage)
         });
 
-        if (!res.ok) throw new Error("Failed to post");
+        if (!res.ok) throw new Error("Failed to post message");
         return res.json();
     },
     onSuccess: () => {
@@ -73,22 +73,26 @@ const postMutation = useMutation({
 });
 
 const handleSubmit = () => {
-    if (!form.value.message) return;
+    if (!form.value.message.trim()) return;
     postMutation.mutate({ message: form.value.message });
 };
 
 const displayName = computed(() => {
     if (!user.value) return '';
     const meta = user.value.user_metadata;
-    return meta.full_name || meta.user_name || meta.preferred_username || user.value.email;
+    return meta?.full_name || meta?.user_name || meta?.preferred_username || user.value.email;
 });
 
 const messages = computed(() => {
-    return apiResponse.value?.data || [];
+    const res = apiResponse.value;
+    if (res?.data && Array.isArray(res.data)) return res.data;
+    if (res?.data?.data && Array.isArray(res.data.data)) return res.data.data;
+    return [];
 });
 
 const meta = computed(() => {
-    return apiResponse.value?.pagination || { total_pages: 1 };
+    const res = apiResponse.value;
+    return res?.pagination || res?.data?.pagination || { total_pages: 1 };
 });
 
 const nextPage = () => {
