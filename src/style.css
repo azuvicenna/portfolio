@@ -1,28 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&display=swap");
 @import "tailwindcss";
 
-body {
-  zoom: 90%;
-}
-
 @theme {
-  --font-sans: "Plus Jakarta Sans", sans-serif;
-  --color-dark: #0f172a;
-  --color-darker: #020617;
-  --color-silver: #e2e8f0;
-  --shadow-glow-white: 0 0 20px rgba(255, 255, 255, 0.15);
+    --font-sans: "Plus Jakarta Sans", sans-serif;
+
+    --color-brand-50: #f0fdf4;
+    --color-brand-100: #dcfce7;
+    --color-brand-500: #22c55e;
+    --color-brand-600: #16a34a;
+    --color-brand-700: #15803d;
+    --color-brand-900: #14532d;
+
+    --color-cream: #f8f6f0;
+    --color-cream-card: #faf8f5;
+    --color-hero: #f4f3ed;
+
+    --shadow-soft-xl: 0 20px 40px -15px rgb(0 0 0 / 0.06);
+    --shadow-float: 0 12px 30px -5px rgb(0 0 0 / 0.08);
 }
 
-/* Custom scrollbar for dark theme */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #020617; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-/* Subtle glow animation for the background blob */
-@keyframes pulse-slow {
-    0%, 100% { opacity: 0.15; transform: scale(1); }
-    50% { opacity: 0.25; transform: scale(1.05); }
+html {
+    scroll-behavior: smooth;
 }
-.blob-animate {
-    animation: pulse-slow 8s infinite ease-in-out;
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+body {
+    background: var(--color-cream);
+    color: #0f172a;
+}
+
+section {
+    scroll-margin-top: 5rem;
+}
+
+.glass-header {
+    background: rgb(248 246 240 / 0.85);
+    backdrop-filter: blur(12px);
+}
+
+.widget-card {
+    cursor: pointer;
+    transition:
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.3s ease;
+}
+
+.widget-card:hover {
+    transform: translateY(-4px);
+}
+
+.nav-link.active {
+    color: #0f172a;
+}
+
+#mobileNav .nav-link.active {
+    color: var(--color-brand-600);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-cream);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }

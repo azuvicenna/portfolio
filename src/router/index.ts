@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: App // We use App as the main container
+      component: App
     }
   ],
   scrollBehavior(to, _from, savedPosition) {

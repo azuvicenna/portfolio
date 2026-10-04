@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import Navbar from './components/Navbar.vue'
-import Hero from './components/Hero.vue'
-import About from './components/About.vue'
-import Resume from './components/Resume.vue'
-import Projects from './components/Projects.vue'
-import Certifications from './components/Certifications.vue'
-import Contact from './components/Contact.vue'
-import Footer from './components/Footer.vue'
+import AppHeader from './components/AppHeader.vue'
+import HeroSection from './components/HeroSection.vue'
+import AboutSection from './components/AboutSection.vue'
+import SkillsSection from './components/SkillsSection.vue'
+import ExperienceSection from './components/ExperienceSection.vue'
+import ProjectsSection from './components/ProjectsSection.vue'
+import CertificatesSection from './components/CertificatesSection.vue'
+import ContactSection from './components/ContactSection.vue'
+import AppFooter from './components/AppFooter.vue'
 </script>
 
 <template>
-  <Navbar />
-  <main>
-    <Hero />
-    <About />
-    <Resume />
-    <Projects />
-    <Certifications />
-    <Contact />
-  </main>
-  <Footer />
+  <AppHeader />
+  <HeroSection />
+  <AboutSection />
+  <SkillsSection />
+  <ExperienceSection />
+  <ProjectsSection />
+  <CertificatesSection />
+  <ContactSection />
+  <AppFooter />
 </template>
