@@ -1,9 +1,17 @@
 <script setup lang="ts">
-const svgUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+import { ref, computed } from 'vue'
 
+interface Project {
+    name: string
+    stack: string[]
+    color: string
+    desc: string
+    image?: string
+}
+
+const svgUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 const rows = (n: number): number[] => [...Array(n).keys()]
 
-/** Mockup screenshot aplikasi (placeholder) berupa SVG. `index` memilih salah satu dari 4 layout. */
 function projectMockup(color: string, index: number): string {
     const c = color
     const frame =
@@ -48,12 +56,102 @@ function projectMockup(color: string, index: number): string {
     return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">${frame}${body}</svg>`)
 }
 
-const projects = [
-    { name: 'SIMPUS (Sistem Informasi Puskesmas)', stack: ['Laravel', 'VueJS', 'PostgreSQL', 'Docker'], color: '#16A34A', desc: 'Duis aute irure reprehenderit in voluptate velit esse cillum eu fugiat nulla pariatur excepteur sint occaecat.' },
-    { name: 'SITUGAS MTs BPI Baturompe', stack: ['Laravel', 'MySQL', 'Livewire'], color: '#2563EB', desc: 'Cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum lorem ipsum dolor.' },
-    { name: 'Perpustakaan Digital', stack: ['Laravel', 'TailwindCSS', 'MySQL'], color: '#D97706', desc: 'Sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
-    { name: 'Absensi & Undian (Balai Kota)', stack: ['Laravel', 'MySQL', 'FaceAPI.JS', 'Docker'], color: '#9333EA', desc: 'Enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis.' },
+const allProjects: Project[] = [
+    {
+        name: 'SIMPUS (Sistem Informasi Puskesmas)',
+        stack: ['Laravel', 'TailwindCSS', 'VueJS', 'PostgreSQL', 'Typst', 'Docker'],
+        color: '#16A34A',
+        image: '/projects/simpus.png',
+        desc: 'Sistem pelayanan kesehatan terpadu Kota Tasikmalaya berarsitektur multi-tenant untuk layanan rawat jalan, rawat inap, UGD, serta operasional lintas klaster.',
+    },
+    {
+        name: 'Perpustakaan Digital Sekolah',
+        stack: ['Laravel', 'TailwindCSS', 'MySQL'],
+        color: '#D97706',
+        image: '/projects/perpus-digital.png',
+        desc: 'Sistem pengelolaan peminjaman dan pengembalian buku fisik secara online dengan fitur membaca buku digital, notifikasi, serta integrasi Payment Gateway Tripay.',
+    },
+    {
+        name: 'SIG Desa Kaputihan',
+        stack: ['QGIS', 'Laravel', 'VueJS', 'TailwindCSS', 'InertiaJS', 'MySQL'],
+        color: '#EF4444',
+        image: '/projects/sig-kaputihan.png',
+        desc: 'Sistem Informasi Geografis pemetaan batas wilayah desa/dusun/RT/RW, titik lokasi bangunan, survei statistik, serta jadwal kegiatan desa.',
+    },
+    {
+        name: 'Absensi & Undian (Balai Kota)',
+        stack: ['Laravel', 'TailwindCSS', 'VueJS', 'FaceAPIJS', 'PostgreSQL', 'Docker'],
+        color: '#9333EA',
+        image: '/projects/absensi-undian.png',
+        desc: 'Sistem absensi berbasis geofencing dan face recognition untuk kegiatan Hari Kesehatan Nasional yang dilengkapi fitur pengundian kupon hadiah otomatis.',
+    },
+    {
+        name: 'Personal Portfolio Web',
+        stack: ['TypeScript', 'VueJS', 'TailwindCSS'],
+        color: '#14B8A6',
+        image: '/projects/portfolio.png',
+        desc: 'Aplikasi portfolio berbasis web untuk mempresentasikan personal branding Software Developer Atyla Azfa Al Harits.',
+    },
+    {
+        name: 'Yomu Japanese',
+        stack: ['TypeScript', 'VueJS', 'TailwindCSS'],
+        color: '#14B8A6',
+        image: '/projects/yomu-japanese.png',
+        desc: 'Aplikasi PWA pembelajaran bahasa Jepang (Hiragana, Katakana, kosakata, tata bahasa) yang mendukung fitur internasionalisasi/multi-bahasa (i18n).',
+    },
+    {
+        name: 'Islamiku',
+        stack: ['JavaScript', 'VueJS', 'TailwindCSS'],
+        color: '#10B981',
+        image: '/projects/islamiku.png',
+        desc: 'Aplikasi Islami yang menyediakan Al-Qur\'an 114 surah dengan audio, Asmaul Husna, doa harian, dan niat shalat melalui konsumsi API eksternal.',
+    },
+    {
+        name: 'Kaputihan Mart',
+        stack: ['Laravel', 'MySQL'],
+        color: '#F59E0B',
+        image: '/projects/kaputihan-mart.png',
+        desc: 'Platform belanja online produk UMKM lokal Desa Kaputihan yang terintegrasi dengan WhatsApp untuk memudahkan pembeli berkomunikasi dengan penjual.',
+    },
+    {
+        name: 'SIMDOKU',
+        stack: ['Laravel', 'Livewire', 'MySQL'],
+        color: '#8B5CF6',
+        image: '/projects/simdoku.png',
+        desc: 'Sistem pengarsipan dan administrasi dokumen terpusat untuk pendataan beasiswa, pembuatan surat tugas, proposal, laporan, hingga pengajuan dana.',
+    },
+    {
+        name: 'SISKOMDIG',
+        stack: ['Laravel', 'MySQL'],
+        color: '#3B82F6',
+        image: '/projects/siskomdig.png',
+        desc: 'Portal media informasi dan company profile bagi pelaku UMKM Desa Serang yang dilengkapi pengelolaan kegiatan komunitas, data mitra, dan portal berita.',
+    },
+    {
+        name: 'SITUGAS MTs BPI Baturompe',
+        stack: ['Laravel', 'Livewire', 'MySQL'],
+        color: '#2563EB',
+        image: '/projects/situgas.png',
+        desc: 'Aplikasi pengelolaan modul ajar, absensi siswa, pembagian dan penilaian tugas, serta jadwal pelajaran untuk mendukung pembelajaran paperless.',
+    },
+    {
+        name: 'SITAKO',
+        stack: ['K3s', 'Docker', 'ExpressJS', 'TypeScript', 'VueJS', 'TailwindCSS', 'Flutter', 'PostgreSQL', 'Redis'],
+        color: '#EC4899',
+        image: '/projects/sitako.png',
+        desc: 'Sistem perpustakaan multi-platform (web & mobile) berarsitektur standalone dan multi-replica yang dikembangkan dengan orkestasi K3s.',
+    },
 ]
+
+const showAll = ref(false)
+
+const displayedProjects = computed(() => {
+    return showAll.value ? allProjects : allProjects.slice(0, 4)
+})
+
+const toggleShowAll = () => {
+    showAll.value = !showAll.value
+}
 </script>
 
 <template>
@@ -62,24 +160,37 @@ const projects = [
             <div class="text-center max-w-2xl mx-auto mb-14">
                 <span class="text-brand-700 font-bold text-xs uppercase tracking-widest">Karya nyata</span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-2 mb-4">Proyek pilihan</h2>
-                <p class="text-neutral-600 text-sm sm:text-base font-medium">Aplikasi yang saya bangun untuk kebutuhan
-                    nyata.</p>
+                <p class="text-neutral-600 text-sm sm:text-base font-medium">
+                    Aplikasi yang saya bangun untuk kebutuhan nyata.
+                </p>
             </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <article v-for="(p, i) in projects" :key="p.name"
-                    class="bg-cream-card border border-neutral-200 rounded-3xl p-4 hover:border-brand-500/50 transition-all duration-300">
-                    <img :src="projectMockup(p.color, i)" :alt="`Tampilan aplikasi ${p.name}`"
-                        class="w-full aspect-video object-cover rounded-2xl border border-neutral-200" loading="lazy" />
+                <article v-for="(p, i) in displayedProjects" :key="p.name"
+                    class="group bg-cream-card border border-neutral-200 rounded-3xl p-4 hover:border-brand-500/50 transition-all duration-300 cursor-pointer">
+                    <div class="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100">
+                        <img :src="p.image || projectMockup(p.color, i)" :alt="`Tampilan aplikasi ${p.name}`"
+                            class="w-full aspect-video object-cover scale-105 transition-transform duration-500 group-hover:scale-100"
+                            loading="lazy" />
+                    </div>
                     <div class="p-4 pt-6">
                         <h3 class="text-xl font-extrabold mb-3">{{ p.name }}</h3>
                         <p class="text-neutral-600 text-sm leading-relaxed font-medium mb-5">{{ p.desc }}</p>
                         <div class="flex flex-wrap gap-2">
                             <span v-for="t in p.stack" :key="t"
-                                class="text-[11px] font-bold px-2.5 py-1 rounded-md bg-brand-100 text-brand-700">{{ t
-                                }}</span>
+                                class="text-[11px] font-bold px-2.5 py-1 rounded-md bg-brand-100 text-brand-700">
+                                {{ t }}
+                            </span>
                         </div>
                     </div>
                 </article>
+            </div>
+
+            <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button @click="toggleShowAll"
+                    class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 cursor-pointer">
+                    {{ showAll ? 'Lihat lebih sedikit' : 'Lihat selengkapnya' }}
+                </button>
             </div>
         </div>
     </section>

@@ -36,8 +36,8 @@ onBeforeUnmount(() => observer?.disconnect())
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <a href="#home" class="flex items-center group">
-                    <img src="/favicon.png" alt="Logo Portfolio Web"
-                        class="w-10 h-10 rounded-xl object-contain group-hover:scale-105 transition-transform" />
+                    <!-- <img src="/favicon.png" alt="Logo Portfolio Web"
+                        class="w-10 h-10 rounded-xl object-contain group-hover:scale-105 transition-transform" /> -->
                     <span class="text-xl font-extrabold tracking-tight text-neutral-900">Portfolio Web</span>
                 </a>
                 <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-neutral-600">

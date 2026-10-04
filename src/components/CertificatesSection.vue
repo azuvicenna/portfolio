@@ -18,7 +18,7 @@ const certs = [
                 <article v-for="c in certs" :key="c.id"
                     class="bg-white border border-neutral-200 rounded-3xl p-4 shadow-sm hover:border-brand-500/50 transition-all duration-300 flex flex-col">
                     <img :src="c.image" :alt="`Sertifikat ${c.name}`"
-                        class="w-full aspect-10/7 object-cover rounded-2xl border border-neutral-200"
+                        class="w-full aspect-10/7 object-cover rounded-2xl border border-neutral-200 cursor-pointer"
                         loading="lazy" />
                     <div class="p-4 pt-6 flex-1 flex flex-col">
                         <h3 class="text-base font-extrabold leading-snug mb-3">{{ c.name }}</h3>

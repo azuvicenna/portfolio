@@ -8,8 +8,9 @@
                 </div>
 
                 <!-- Widget melayang (hanya desktop lebar) -->
+                <!-- Widget 1: Kiri Atas -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 left-8 w-52">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 left-8 w-52 animate-float">
                     <div class="flex items-center space-x-2 mb-2"><span
                             class="w-2 h-2 rounded-full bg-brand-500"></span><span
                             class="text-xs font-bold text-neutral-800">Lokasi</span></div>
@@ -17,8 +18,10 @@
                     <div class="mt-3 text-[10px] font-bold text-neutral-400 border-t border-neutral-100 pt-1.5">Terbuka
                         untuk remote</div>
                 </div>
+
+                <!-- Widget 2: Kanan Atas (delay-1) -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 right-8 w-56">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 right-8 w-56 animate-float-delayed-1">
                     <div class="flex justify-between items-center mb-2"><span
                             class="text-xs font-extrabold text-neutral-700">Stack utama</span><span
                             class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Aktif</span>
@@ -29,16 +32,20 @@
                             }}</span>
                     </div>
                 </div>
+
+                <!-- Widget 3: Kiri Bawah (delay-2) -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 left-10 w-52">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 left-10 w-52 animate-float-delayed-2">
                     <div class="flex items-center space-x-2 mb-1.5"><span
                             class="w-2 h-2 rounded-full bg-blue-500"></span><span
                             class="text-xs font-bold text-neutral-800">Pendidikan Saat ini</span></div>
                     <p class="text-[11px] font-medium text-neutral-500">S1 Sistem Informasi</p>
                     <p class="text-[11px] font-bold text-neutral-800">Universitas BSI</p>
                 </div>
+
+                <!-- Widget 4: Kanan Bawah (delay-3) -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 right-10 w-56">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 right-10 w-56 animate-float-delayed-3">
                     <div class="flex items-center justify-between mb-2"><span
                             class="text-[11px] font-bold text-neutral-700">Pengalaman terakhir</span><span
                             class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">2025</span>
@@ -51,14 +58,16 @@
                     <div
                         class="inline-flex items-center space-x-2 bg-white/80 border border-neutral-300 rounded-full px-3.5 py-1.5 mb-6 shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span class="text-xs font-bold text-neutral-700 uppercase tracking-wide">Terbuka untuk peluang kerja</span>
+                        <span class="text-xs font-bold text-neutral-700 uppercase tracking-wide">Terbuka untuk peluang
+                            kerja</span>
                     </div>
                     <h1 class="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] mb-6">
                         Atyla Azfa <br class="hidden sm:inline" /><span
                             class="underline decoration-brand-500/40 underline-offset-8">Al Harits</span>
                     </h1>
                     <p class="text-neutral-600 text-sm sm:text-lg leading-relaxed font-medium mb-8 max-w-xl mx-auto">
-                        Software developer yang membangun aplikasi web dan mobile dengan Laravel, Vue, dan TypeScript.</p>
+                        Software developer yang membangun aplikasi web dan mobile dengan Laravel, Vue, dan TypeScript.
+                    </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <a href="CV_ID_Atyla_Azfa_Al_Harits.pdf" download
                             class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95">Download
@@ -76,3 +85,36 @@
         </div>
     </section>
 </template>
+
+<style scoped>
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-delayed-1 {
+    animation: float 4.5s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+.animate-float-delayed-2 {
+    animation: float 3.8s ease-in-out infinite;
+    animation-delay: 2s;
+}
+
+.animate-float-delayed-3 {
+    animation: float 4.2s ease-in-out infinite;
+    animation-delay: 0.5s;
+}
+</style>
