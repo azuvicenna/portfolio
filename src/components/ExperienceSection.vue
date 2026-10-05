@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const education = [
-    { logo: '/logo/universitas-bsi.png', badge: '2023 - Sekarang', title: 'Sistem Informasi (S1) - Smtr 6', org: 'Universitas Bina Sarana Informatika', points: ['Terlibat proyek pengabdian masyarakat (mandiri & hibah pemerintah).', 'Membangun aplikasi mobile dengan Flutter.', 'Mengerjakan proyek machine learning menggunakan Python.'] },
+    { logo: '/logo/universitas-bsi.png', badge: '2023 - Sekarang', title: 'Sistem Informasi (S1)', org: 'Universitas Bina Sarana Informatika', points: ['Terlibat proyek pengabdian masyarakat (mandiri & hibah pemerintah).', 'Membangun aplikasi mobile dengan Flutter.', 'Mengerjakan proyek machine learning menggunakan Python.'] },
     { logo: '/logo/smkn3banjar.png', badge: '2020 - 2023', title: 'Rekayasa Perangkat Lunak (RPL)', org: 'SMK Negeri 3 Banjar', points: ['Membangun proyek menggunakan PHP & framework Laravel.', 'Merancang struktur database SQL kuat (MySQL).'] },
 ]
 const work = [
