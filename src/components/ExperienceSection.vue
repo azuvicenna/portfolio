@@ -1,12 +1,46 @@
 <script setup lang="ts">
 const education = [
-    { logo: '/logo/universitas-bsi.png', badge: '2023 - Sekarang', title: 'Sistem Informasi (S1)', org: 'Universitas Bina Sarana Informatika', points: ['Terlibat proyek pengabdian masyarakat (mandiri & hibah pemerintah).', 'Membangun aplikasi mobile dengan Flutter.', 'Mengerjakan proyek machine learning menggunakan Python.'] },
-    { logo: '/logo/smkn3banjar.png', badge: '2020 - 2023', title: 'Rekayasa Perangkat Lunak (RPL)', org: 'SMK Negeri 3 Banjar', points: ['Membangun proyek menggunakan PHP & framework Laravel.', 'Merancang struktur database SQL kuat (MySQL).'] },
+    {
+        logo: '/logo/universitas-bsi.png',
+        badge: '2023 - Sekarang',
+        title: 'Sistem Informasi (S1)',
+        org: 'Universitas Bina Sarana Informatika',
+        points: ['Terlibat proyek pengabdian masyarakat (mandiri & hibah pemerintah).', 'Membangun aplikasi web, mobile, dan machine learning.'],
+    },
+    {
+        logo: '/logo/smkn3banjar.png',
+        badge: '2020 - 2023',
+        title: 'Rekayasa Perangkat Lunak (RPL)',
+        org: 'SMK Negeri 3 Banjar',
+        points: ['Membangun proyek menggunakan PHP & framework Laravel.', 'Merancang struktur database SQL kuat (MySQL).'],
+    },
 ]
+
 const work = [
-    { logo: '/logo/diskominfo-kota-tasikmalaya.png', title: 'Software Developer', date: 'Sep 2025 - Des 2025', org: 'Diskominfo Kota Tasikmalaya', points: ['Pengembangan dan pemeliharaan aplikasi SIMPUS (Sistem Informasi Puskesmas).', 'Melakukan riset mandiri untuk memetakan alur data kesehatan kompleks menjadi skema database yang efisien.', 'Bekerja remote dengan sistem kolaborasi Git dan Kanban board.'] },
-    { logo: '/logo/mutiara-digital-printing.jpe', title: 'Siswa Magang', date: 'Feb 2022 - Apr 2022', org: 'Mutiara Digital Printing Kota Banjar', points: ['Asisten teknikal karyawan di bidang percetakan banner/spanduk.', 'Membangun aplikasi toko percetakan online berbasis web dengan CodeIgniter 4.'] },
+    {
+        logo: '/logo/diskominfo-kota-tasikmalaya.png',
+        title: 'Software Developer',
+        date: 'Sep 2025 - Des 2025',
+        org: 'Diskominfo Kota Tasikmalaya',
+        points: [
+            'Membangun Sistem Informasi Puskesmas (Vue.js, Laravel, PostgreSQL, Docker).',
+            'Mengembangkan templat persuratan dinamis menggunakan Typst.',
+            'Merancang antarmuka layanan medis (rawat jalan, inap, UGD) yang intuitif.',
+        ],
+    },
+    {
+        logo: '/logo/mutiara-digital-printing.jpe',
+        title: 'Web Developer Intern',
+        date: 'Feb 2022 - Apr 2022',
+        org: 'Mutiara Digital Printing Kota Banjar',
+        points: [
+            'Membangun aplikasi e-commerce percetakan (CodeIgniter 4 & MySQL).',
+            'Mengimplementasikan katalog interaktif dan sistem pemesanan jarak jauh.',
+            'Mendigitalisasi alur operasional cetak guna mempercepat rekap pesanan.',
+        ],
+    },
 ]
+
 const bulletsClass = 'mt-4 list-disc pl-4 marker:text-neutral-400 space-y-2 text-sm text-neutral-600 font-medium leading-relaxed'
 const logoClass = 'w-12 h-12 shrink-0 rounded-lg object-contain bg-white border border-neutral-200'
 </script>

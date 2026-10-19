@@ -1,5 +1,5 @@
 <template>
-    <section id="home" class="relative pt-12 sm:pt-20 pb-16 sm:pb-24 overflow-hidden">
+    <section id="home" class="relative pt-8 sm:pt-5 pb-16 sm:pb-24 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div
                 class="relative bg-hero border border-neutral-300 rounded-3xl p-6 sm:p-12 lg:p-16 shadow-soft-xl overflow-hidden">
@@ -69,7 +69,7 @@
                         Software developer yang membangun aplikasi web dan mobile dengan Laravel, Vue, dan TypeScript.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <a href="CV_ID_Atyla_Azfa_Al_Harits.pdf" download
+                        <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" download
                             class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95">Download
                             CV</a>
                         <a href="https://github.com/azuvicenna" target="_blank" rel="noopener"

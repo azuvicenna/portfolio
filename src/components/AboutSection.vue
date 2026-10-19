@@ -1,6 +1,16 @@
 <script setup lang="ts">
-const points = ['Terbiasa membangun sistem informasi', 'Pengalaman di instansi pemerintah daerah', 'Terbuka untuk kolaborasi dan remote']
-const does = ['Software Development', 'Machine Learning', 'DevOps', 'IT Infrastructure']
+const points = [
+    'Berpengalaman membangun berbagai sistem informasi.',
+    'Memiliki rekam jejak pengembangan di instansi pemerintah daerah.',
+    'Siap berkolaborasi dalam tim maupun bekerja secara remote (WFA).',
+]
+
+const does = [
+    'Software Development',
+    'Machine Learning',
+    'DevOps',
+    'IT Infrastructure',
+]
 </script>
 
 <template>
@@ -21,7 +31,7 @@ const does = ['Software Development', 'Machine Learning', 'DevOps', 'IT Infrastr
                             <span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Profil singkat</span>
                         </div>
                         <h3 class="text-2xl font-extrabold mb-2">Atyla Azfa Al Harits</h3>
-                        <p class="text-neutral-400 text-xs sm:text-sm mb-8">Software Developer</p>
+                        <p class="text-neutral-400 text-xs sm:text-sm mb-8">Software Developer | Backend Developer</p>
                         <ul class="space-y-4 text-sm font-medium text-neutral-300">
                             <li v-for="t in points" :key="t" class="flex items-center space-x-3">
                                 <svg class="w-4 h-4 text-brand-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -40,10 +50,10 @@ const does = ['Software Development', 'Machine Learning', 'DevOps', 'IT Infrastr
                     <div>
                         <h4 class="font-extrabold text-base mb-4">Sedikit tentang saya</h4>
                         <p class="text-neutral-600 text-sm leading-relaxed font-medium mb-6">Software Developer dengan
-                            pengalaman praktis dalam membangun dan memelihara aplikasi web menggunakan PHP,
-                            Laravel, TypeScript, dan Vue.js. Berfokus pada pengembangan backend, perancangan database
-                            relasional, serta
-                            pengembangan aplikasi secara remote menggunakan Git dan Kanban.</p>
+                            keahlian utama di Backend Development, memiliki pengalaman praktis membangun aplikasi web
+                            scalable menggunakan PHP, Laravel, TypeScript, dan Vue.js. Terbiasa merancang arsitektur
+                            database relasional (PostgreSQL, MySQL) dan mengimplementasikan solusi teknis dalam
+                            lingkungan remote dengan metodologi Agile.</p>
                         <p class="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-3">Yang Sedang Saya
                             Pelajari</p>
                         <div class="grid grid-cols-2 gap-2.5 mb-6">

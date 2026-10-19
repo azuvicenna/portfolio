@@ -48,7 +48,7 @@ onBeforeUnmount(() => observer?.disconnect())
                 <div class="hidden md:flex items-center space-x-4">
                     <a href="https://github.com/azuvicenna" target="_blank" rel="noopener"
                         class="hidden lg:block text-sm font-bold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition">GitHub</a>
-                    <a href="CV_ID_Atyla_Azfa_Al_Harits.pdf" download
+                    <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" download
                         class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all transform active:scale-95">Download
                         CV</a>
                 </div>

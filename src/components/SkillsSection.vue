@@ -1,8 +1,5 @@
 <script setup lang="ts">
-type Tech = [name: string, icon: string]
-interface Tile { title: string; span: string; big?: boolean; items: Tech[] }
-
-const tiles: Tile[] = [
+const tiles = [
     {
         title: 'Bahasa pemrograman',
         span: 'lg:col-span-1',

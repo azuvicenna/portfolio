@@ -1,8 +1,26 @@
 <script setup lang="ts">
 const certs = [
-    { name: 'Sertifikat Pengalaman Kerja - Diskominfo Kota Tasikmalaya', date: 'Nov 2025', id: '400.14.5.4/054/KOMINFO/2025', tag: 'SQL', image: '/certifications/sertifikat-magang-diskominfo.jpe' },
-    { name: 'Pemrograman TypeScript untuk Pemula sampai Mahir - Programmer Zaman Now', date: 'Okt 2025', id: 'cert_wmjt1cyk', tag: 'TypeScript', image: '/certifications/pzn-typescript.jpe' },
-    { name: 'Database Design and Database Programming with SQL - Digital Talent Scholarship', date: 'Feb 2024', id: '2007340840-230/TSA/BLSDM.Kominfo/2024', tag: 'SQL', image: '/certifications/digitalent-sql.jpe' },
+  {
+    name: 'Sertifikat Pengalaman Kerja - Diskominfo Kota Tasikmalaya',
+    date: 'Nov 2025',
+    id: '400.14.5.4/054/KOMINFO/2025',
+    tag: 'SQL',
+    image: '/certifications/sertifikat-magang-diskominfo.jpe',
+  },
+  {
+    name: 'Pemrograman TypeScript untuk Pemula sampai Mahir - Programmer Zaman Now',
+    date: 'Okt 2025',
+    id: 'cert_wmjt1cyk',
+    tag: 'TypeScript',
+    image: '/certifications/pzn-typescript.jpe',
+  },
+  {
+    name: 'Database Design and Database Programming with SQL - Digital Talent Scholarship',
+    date: 'Feb 2024',
+    id: '2007340840-230/TSA/BLSDM.Kominfo/2024',
+    tag: 'SQL',
+    image: '/certifications/digitalent-sql.jpe',
+  },
 ]
 </script>
 
