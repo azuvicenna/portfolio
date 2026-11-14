@@ -1,42 +1,62 @@
 <script setup lang="ts">
-const education = [
+interface EducationItem {
+    readonly logo: string
+    readonly badge: string
+    readonly title: string
+    readonly org: string
+    readonly points: readonly string[]
+}
+
+interface WorkItem {
+    readonly logo: string
+    readonly title: string
+    readonly date: string
+    readonly org: string
+    readonly points: readonly string[]
+}
+
+const education: readonly EducationItem[] = [
     {
         logo: '/logo/universitas-bsi.png',
-        badge: '2023 - Sekarang',
-        title: 'Sistem Informasi (S1)',
+        badge: '2023 - 2026',
+        title: 'D3 Sistem Informasi',
         org: 'Universitas Bina Sarana Informatika',
-        points: ['Terlibat proyek pengabdian masyarakat (mandiri & hibah pemerintah).', 'Membangun aplikasi web, mobile, dan machine learning.'],
+        points: [
+            'Lulus dengan IPK 3.94 / 4.00.',
+            'Terlibat dalam pengembangan sistem informasi layanan publik serta program SIG partisipatif hibah pemerintah.',
+        ],
     },
     {
         logo: '/logo/smkn3banjar.png',
         badge: '2020 - 2023',
         title: 'Rekayasa Perangkat Lunak (RPL)',
         org: 'SMK Negeri 3 Banjar',
-        points: ['Membangun proyek menggunakan PHP & framework Laravel.', 'Merancang struktur database SQL kuat (MySQL).'],
+        points: [
+            'Lulus dengan nilai rata-rata 82.46 / 100.',
+            'Membangun aplikasi web berbasis PHP/Laravel dan merancang database relasional MySQL.',
+        ],
     },
 ]
 
-const work = [
+const work: readonly WorkItem[] = [
     {
         logo: '/logo/diskominfo-kota-tasikmalaya.png',
-        title: 'Software Developer',
+        title: 'Software Developer (Magang)',
         date: 'Sep 2025 - Des 2025',
         org: 'Diskominfo Kota Tasikmalaya',
         points: [
-            'Membangun Sistem Informasi Puskesmas (Vue.js, Laravel, PostgreSQL, Docker).',
-            'Mengembangkan templat persuratan dinamis menggunakan Typst.',
-            'Merancang antarmuka layanan medis (rawat jalan, inap, UGD) yang intuitif.',
+            'Membangun modul layanan rawat jalan, rawat inap, dan UGD pada Sistem Informasi Puskesmas (Laravel, Vue.js, PostgreSQL) serta men-deploy-nya dengan Docker.',
+            'Membuat 31 templat surat puskesmas berbasis Typst yang dapat dipakai ulang sehingga dokumen dihasilkan dari data sistem dan mudah dipelihara.',
         ],
     },
     {
-        logo: '/logo/mutiara-digital-printing.jpe',
-        title: 'Web Developer Intern',
+        logo: '/logo/mutiara-digital-printing.png',
+        title: 'Web Developer (Magang)',
         date: 'Feb 2022 - Apr 2022',
-        org: 'Mutiara Digital Printing Kota Banjar',
+        org: 'Mutiara Digital Printing',
         points: [
-            'Membangun aplikasi e-commerce percetakan (CodeIgniter 4 & MySQL).',
-            'Mengimplementasikan katalog interaktif dan sistem pemesanan jarak jauh.',
-            'Mendigitalisasi alur operasional cetak guna mempercepat rekap pesanan.',
+            'Mengembangkan aplikasi toko percetakan online berbasis web menggunakan CodeIgniter 4 dan MySQL.',
+            'Mendigitalisasi alur operasional pemesanan banner dan spanduk ke dalam sistem terintegrasi untuk membantu proses rekapitulasi pesanan.',
         ],
     },
 ]

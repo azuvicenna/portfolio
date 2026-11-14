@@ -35,10 +35,13 @@ onBeforeUnmount(() => observer?.disconnect())
     <header class="sticky top-0 z-40 w-full glass-header border-b border-neutral-200/80 transition-all duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
-                <a href="#home" class="flex items-center group">
-                    <!-- <img src="/favicon.png" alt="Logo Portfolio Web"
-                        class="w-10 h-10 rounded-xl object-contain group-hover:scale-105 transition-transform" /> -->
-                    <span class="text-xl font-extrabold tracking-tight text-neutral-900">Portfolio Web</span>
+                <a href="/" class="inline-flex items-center gap-3 group focus:outline-none">
+                    <img src="https://avatars.githubusercontent.com/u/159593076?v=4" alt="Atyla Azfa Al Harits"
+                        width="40" height="40"
+                        class="w-10 h-10 rounded-xl object-cover border border-neutral-200 bg-neutral-100 shadow-xs" />
+                    <span class="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900">
+                        Atyla Azfa<span class="text-brand-600">.</span>
+                    </span>
                 </a>
                 <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-neutral-600">
                     <a v-for="m in menu" :key="m.id" :href="`#${m.id}`"
@@ -48,7 +51,7 @@ onBeforeUnmount(() => observer?.disconnect())
                 <div class="hidden md:flex items-center space-x-4">
                     <a href="https://github.com/azuvicenna" target="_blank" rel="noopener"
                         class="hidden lg:block text-sm font-bold text-neutral-700 hover:text-neutral-900 px-3 py-2 transition">GitHub</a>
-                    <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" download
+                    <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" target="_blank"
                         class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all transform active:scale-95">Download
                         CV</a>
                 </div>

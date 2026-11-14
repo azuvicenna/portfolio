@@ -1,26 +1,47 @@
 <script setup lang="ts">
 const certs = [
-  {
-    name: 'Sertifikat Pengalaman Kerja - Diskominfo Kota Tasikmalaya',
-    date: 'Nov 2025',
-    id: '400.14.5.4/054/KOMINFO/2025',
-    tag: 'SQL',
-    image: '/certifications/sertifikat-magang-diskominfo.jpe',
-  },
-  {
-    name: 'Pemrograman TypeScript untuk Pemula sampai Mahir - Programmer Zaman Now',
-    date: 'Okt 2025',
-    id: 'cert_wmjt1cyk',
-    tag: 'TypeScript',
-    image: '/certifications/pzn-typescript.jpe',
-  },
-  {
-    name: 'Database Design and Database Programming with SQL - Digital Talent Scholarship',
-    date: 'Feb 2024',
-    id: '2007340840-230/TSA/BLSDM.Kominfo/2024',
-    tag: 'SQL',
-    image: '/certifications/digitalent-sql.jpe',
-  },
+    {
+        name: 'Pemrograman Dart untuk Pemula sampai Mahir - Programmer Zaman Now',
+        date: 'Okt 2026',
+        id: 'PZN-course-dart-3660-1791030600',
+        tag: 'Dart',
+        image: '/certifications/pzn-dart.png',
+    },
+    {
+        name: 'Pemrograman Go-Lang untuk Pemula sampai Mahir - Programmer Zaman Now',
+        date: 'Okt 2026',
+        id: 'UC-d94c2bdc-615f-4be2-8d97-ea45a6928037',
+        tag: 'Go',
+        image: '/certifications/pzn-go.png',
+    },
+    {
+        name: 'Pemrograman TypeScript untuk Pemula sampai Mahir - Programmer Zaman Now',
+        date: 'Okt 2025',
+        id: 'cert_wmjt1cyk',
+        tag: 'TypeScript',
+        image: '/certifications/pzn-typescript.png',
+    },
+    {
+        name: 'Sertifikat Pengalaman Kerja - Diskominfo Kota Tasikmalaya',
+        date: 'Nov 2025',
+        id: '400.14.5.4/054/KOMINFO/2025',
+        tag: 'SQL',
+        image: '/certifications/sertifikat-diskominfo.png',
+    },
+    {
+        name: 'Database Design and Database Programming with SQL - Digital Talent Scholarship',
+        date: 'Feb 2024',
+        id: '2007340840-230/TSA/BLSDM.Kominfo/2024',
+        tag: 'SQL',
+        image: '/certifications/digitalent-sql.png',
+    },
+    {
+        name: 'Sertifikat Anggota Resmi IMPHNEN',
+        date: 'Nov 2026',
+        id: '@azfa_alharits',
+        tag: 'Member IMPHNEN',
+        image: '/certifications/sertifikat-imphnen.png',
+    },
 ]
 </script>
 
@@ -44,7 +65,7 @@ const certs = [
                         <p class="text-xs font-medium text-neutral-500 break-all mb-4">Credential ID {{ c.id }}</p>
                         <div class="mt-auto"><span
                                 class="text-[11px] font-bold px-2.5 py-1 rounded-md bg-brand-100 text-brand-700">{{
-                                c.tag }}</span></div>
+                                    c.tag }}</span></div>
                     </div>
                 </article>
             </div>

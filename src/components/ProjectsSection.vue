@@ -79,11 +79,11 @@ const allProjects: Project[] = [
         desc: 'Sistem Informasi Geografis pemetaan batas wilayah desa/dusun/RT/RW, titik lokasi bangunan, survei statistik, serta jadwal kegiatan desa.',
     },
     {
-        name: 'Absensi & Undian (Balai Kota)',
+        name: 'Sistem Informasi Absensi & Undian Balai Kota Tasikmalaya',
         stack: ['Laravel', 'TailwindCSS', 'VueJS', 'FaceAPIJS', 'PostgreSQL', 'Docker'],
         color: '#9333EA',
         image: '/projects/absensi-undian.png',
-        desc: 'Sistem absensi berbasis geofencing dan face recognition untuk kegiatan Hari Kesehatan Nasional yang dilengkapi fitur pengundian kupon hadiah otomatis.',
+        desc: 'Sistem absensi berbasis geofencing dan face recognition untuk kegiatan ASNDay dan HKNDay yang dilengkapi fitur pengundian kupon hadiah.',
     },
     {
         name: 'Personal Portfolio Web',

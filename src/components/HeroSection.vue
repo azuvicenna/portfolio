@@ -10,7 +10,7 @@
                 <!-- Widget melayang (hanya desktop lebar) -->
                 <!-- Widget 1: Kiri Atas -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 left-8 w-52 animate-float">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 left-8 w-52">
                     <div class="flex items-center space-x-2 mb-2"><span
                             class="w-2 h-2 rounded-full bg-brand-500"></span><span
                             class="text-xs font-bold text-neutral-800">Lokasi</span></div>
@@ -19,9 +19,9 @@
                         untuk remote</div>
                 </div>
 
-                <!-- Widget 2: Kanan Atas (delay-1) -->
+                <!-- Widget 2: Kanan Atas -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 right-8 w-56 animate-float-delayed-1">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 top-8 right-8 w-56">
                     <div class="flex justify-between items-center mb-2"><span
                             class="text-xs font-extrabold text-neutral-700">Stack utama</span><span
                             class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Aktif</span>
@@ -33,19 +33,19 @@
                     </div>
                 </div>
 
-                <!-- Widget 3: Kiri Bawah (delay-2) -->
+                <!-- Widget 3: Kiri Bawah -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 left-10 w-52 animate-float-delayed-2">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 left-10 w-52">
                     <div class="flex items-center space-x-2 mb-1.5"><span
                             class="w-2 h-2 rounded-full bg-blue-500"></span><span
-                            class="text-xs font-bold text-neutral-800">Pendidikan Saat ini</span></div>
+                            class="text-xs font-bold text-neutral-800">Pendidikan Aktif</span></div>
                     <p class="text-[11px] font-medium text-neutral-500">S1 Sistem Informasi</p>
                     <p class="text-[11px] font-bold text-neutral-800">Universitas BSI</p>
                 </div>
 
-                <!-- Widget 4: Kanan Bawah (delay-3) -->
+                <!-- Widget 4: Kanan Bawah -->
                 <div
-                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 right-10 w-56 animate-float-delayed-3">
+                    class="hidden lg:block absolute bg-white/90 backdrop-blur border border-neutral-200/90 rounded-2xl p-4 shadow-float widget-card z-20 bottom-8 right-10 w-56">
                     <div class="flex items-center justify-between mb-2"><span
                             class="text-[11px] font-bold text-neutral-700">Pengalaman terakhir</span><span
                             class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">2025</span>
@@ -69,7 +69,7 @@
                         Software developer yang membangun aplikasi web dan mobile dengan Laravel, Vue, dan TypeScript.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" download
+                        <a href="/CV/CV_ID_Atyla_Azfa_Al_Harits.pdf" target="_blank"
                             class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95">Download
                             CV</a>
                         <a href="https://github.com/azuvicenna" target="_blank" rel="noopener"
@@ -77,7 +77,7 @@
                     </div>
                     <div
                         class="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-semibold text-neutral-500">
-                        <span>•</span><span>Ciamis, Indonesia</span><span>•</span><span>D3/S1 Sistem
+                        <span>•</span><span>Ciamis, Indonesia</span><span>•</span><span>D3 Sistem
                             Informasi</span><span>•</span><span>Software Developer</span>
                     </div>
                 </div>
@@ -85,36 +85,3 @@
         </div>
     </section>
 </template>
-
-<style scoped>
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.animate-float {
-    animation: float 4s ease-in-out infinite;
-}
-
-.animate-float-delayed-1 {
-    animation: float 4.5s ease-in-out infinite;
-    animation-delay: 1s;
-}
-
-.animate-float-delayed-2 {
-    animation: float 3.8s ease-in-out infinite;
-    animation-delay: 2s;
-}
-
-.animate-float-delayed-3 {
-    animation: float 4.2s ease-in-out infinite;
-    animation-delay: 0.5s;
-}
-</style>
