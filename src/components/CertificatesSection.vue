@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useImageModal } from '../composables/useImageModal'
+
+const { openModal } = useImageModal()
+
 const certs = [
     {
         name: 'Pemrograman Dart untuk Pemula sampai Mahir - Programmer Zaman Now',
@@ -56,9 +60,20 @@ const certs = [
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <article v-for="c in certs" :key="c.id"
                     class="bg-white border border-neutral-200 rounded-3xl p-4 shadow-sm hover:border-brand-500/50 transition-all duration-300 flex flex-col">
-                    <img :src="c.image" :alt="`Sertifikat ${c.name}`"
-                        class="w-full aspect-10/7 object-cover rounded-2xl border border-neutral-200 cursor-pointer"
-                        loading="lazy" />
+                    <div class="relative group/img cursor-zoom-in rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100"
+                        @click="openModal(c.image, c.name, `Credential ID: ${c.id} • Diterbitkan ${c.date}`)">
+                        <img :src="c.image" :alt="`Sertifikat ${c.name}`"
+                            class="w-full aspect-10/7 object-cover group-hover/img:scale-105 transition-transform duration-500"
+                            loading="lazy" />
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-neutral-800 text-xs font-bold shadow-md backdrop-blur">
+                                <svg class="w-3.5 h-3.5 text-neutral-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                </svg>
+                                Perbesar
+                            </span>
+                        </div>
+                    </div>
                     <div class="p-4 pt-6 flex-1 flex flex-col">
                         <h3 class="text-base font-extrabold leading-snug mb-3">{{ c.name }}</h3>
                         <p class="text-xs font-medium text-neutral-500 mb-1">Diterbitkan {{ c.date }}</p>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useImageModal } from '../composables/useImageModal'
+
+const { openModal } = useImageModal()
 
 interface Project {
     name: string
@@ -119,10 +122,19 @@ const toggleShowAll = () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <article v-for="(p, i) in displayedProjects" :key="p.name"
                     class="group bg-cream-card border border-neutral-200 rounded-3xl p-4 hover:border-brand-500/50 transition-all duration-300 cursor-pointer">
-                    <div class="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100">
+                    <div class="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 relative group/img cursor-zoom-in"
+                        @click="openModal(p.image || projectMockup(p.color, i), p.name, p.desc)">
                         <img :src="p.image || projectMockup(p.color, i)" :alt="`Tampilan aplikasi ${p.name}`"
                             class="w-full aspect-video object-cover scale-105 transition-transform duration-500 group-hover:scale-100"
                             loading="lazy" />
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-neutral-800 text-xs font-bold shadow-md backdrop-blur">
+                                <svg class="w-3.5 h-3.5 text-neutral-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                </svg>
+                                Perbesar
+                            </span>
+                        </div>
                     </div>
                     <div class="p-4 pt-6">
                         <h3 class="text-xl font-extrabold mb-3">{{ p.name }}</h3>

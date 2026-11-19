@@ -38,6 +38,29 @@ section {
     scroll-margin-top: 5rem;
 }
 
+/* Section entrance animation */
+.section-animate {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+
+.section-animate.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Stagger delay for inner section blocks */
+.section-animate:nth-child(2) {
+    transition-delay: 0.12s;
+}
+
+.section-animate:nth-child(3) {
+    transition-delay: 0.22s;
+}
+
 .glass-header {
     background: rgb(248 246 240 / 0.85);
     backdrop-filter: blur(12px);
@@ -81,5 +104,9 @@ section {
     *::after {
         animation: none !important;
         transition: none !important;
+    }
+    .section-animate {
+        opacity: 1 !important;
+        transform: none !important;
     }
 }
